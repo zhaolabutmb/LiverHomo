@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LiverHomo Atlas Explorer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="{{ url_for('static', filename='navigation.js') }}" defer></script>
+  </head>
+  <body class="atlas-body">
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand-mark">
+          <img src="{{ url_for('static', filename='utmb-logo.png') }}" alt="UTMB logo" />
+          <span>LiverHomo</span>
+        </div>
+        <button class="nav-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation">
+          <span class="hamburger-icon" aria-hidden="true"></span>
+        </button>
+        <nav id="primary-navigation" class="header-nav" aria-label="Main navigation">
+          <ul class="nav-links">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li class="dropdown">
+              <a href="{{ url_for('atlas_page') }}" class="dropbtn active">Atlas ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('atlas_page') }}#explore-view">Atlas Explorer</a>
+                <a href="{{ url_for('atlas_page') }}#expression-view">Gene Expression</a>
+                <a href="{{ url_for('atlas_page') }}#deg-view">DEGs</a>
+              </div>
+            </li>
+            <li class="dropdown">
+              <a href="{{ url_for('graph_page') }}" class="dropbtn">Network ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('graph_page') }}#graph-view">Protein Interaction Network</a>
+                <a href="{{ url_for('graph_page') }}#ego-view">EGO:BP Network</a>
+                <a href="{{ url_for('graph_page') }}#interaction-view">Cell-cell Interaction</a>
+              </div>
+            </li>
+            <li class="dropdown">
+              <a href="{{ url_for('resources_page') }}" class="dropbtn">Resources ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('resources_page') }}#methods">Methods</a>
+                <a href="{{ url_for('resources_page') }}#datasets">Curated Datasets</a>
+                <a href="{{ url_for('resources_page') }}#metadata">Data Download</a>
+              </div>
+            </li>
+            <li><a href="{{ url_for('contact_page') }}">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <main class="atlas-layout">
+        <section id="explore-view" class="atlas-view active full-width">
+          <div class="panel results-panel">
+            <div class="chart-header">
+              <h3>Atlas Explorer</h3>
+            </div>
+
+            <div id="umap-panel" class="panel-tabpanel" role="tabpanel">
+              {% set umap_columns = filter_catalog.get('umap_columns', []) %}
+              {% set initial_umap_column = 'diagnosis' if 'diagnosis' in umap_columns else (umap_columns[0] if umap_columns else '') %}
+              <p>Select a metadata column to color the full atlas UMAP.</p>
+              <div class="toolbar-row">
+                <label>
+                  Metadata column
+                  <select id="umap-column">
+                    {% for column in umap_columns %}
+                    <option value="{{ column }}" {% if column == initial_umap_column %}selected{% endif %}>
+                      {{ column | replace('_', ' ') | title }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <span id="umap-status" class="panel-caption" aria-live="polite">
+                  {% if initial_umap_column %}Showing {{ initial_umap_column | replace('_', ' ') }}{% else %}No UMAP images available{% endif %}
+                </span>
+              </div>
+              <div id="umap-plot" class="plot-frame">
+                <img
+                  id="umap-image"
+                  {% if initial_umap_column %}src="{{ url_for('umap_image', column=initial_umap_column) }}"{% else %}hidden{% endif %}
+                  alt="{% if initial_umap_column %}UMAP colored by {{ initial_umap_column | replace('_', ' ') }}{% else %}UMAP{% endif %}"
+                />
+                <p id="umap-empty" {% if initial_umap_column %}hidden{% endif %}>
+                  {% if initial_umap_column %}The pre-generated UMAP image could not be loaded.{% else %}No pre-generated UMAP images are available.{% endif %}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="expression-view" class="atlas-view active full-width">
+            <div class="panel chart-panel">
+              <div class="chart-header">
+                <h3>Gene expression</h3>
+              </div>
+              <div class="toolbar-row">
+                <label>
+                  Gene query
+                  <input id="gene-query" type="text" placeholder="e.g. APOC3" />
+                </label>
+                <label>
+                  Disease
+                  <select id="gene-disease" multiple size="4"></select>
+                </label>
+                <label>
+                  Cell type
+                  <select id="gene-cell-type" multiple size="4"></select>
+                </label>
+                <label>
+                  Plot type
+                  <select id="gene-plot-type">
+                    <option value="histogram">Histogram</option>
+                    <option value="violin">Violin plot</option>
+                  </select>
+                </label>
+                <button id="gene-plot-button">Plot gene</button>
+                <button id="gene-download" class="secondary" disabled>Download figure</button>
+                <button id="gene-reset" class="secondary">Reset</button>
+              </div>
+              <div id="gene-loading" class="viewer-loading" role="status" hidden>
+                <span class="loading-spinner" aria-hidden="true"></span>
+                Generating gene expression plot...
+              </div>
+              <div id="gene-plot" class="plot-frame empty" aria-busy="false">Enter a gene to generate an expression plot.</div>
+            </div>
+          </section>
+
+        <section id="deg-view" class="atlas-view active full-width">
+            <div class="panel results-panel">
+              <div class="chart-header">
+                <h3>Differentially expressed genes</h3>
+                <span id="deg-status" class="deg-status">Select filters and load DEGs.</span>
+              </div>
+
+              <div class="toolbar-row deg-toolbar">
+                <label>
+                  Disease
+                  <select id="deg-disease"></select>
+                </label>
+                <label>
+                  Cell type
+                  <select id="deg-cell-type"></select>
+                </label>
+                <label>
+                  Regulation
+                  <select id="deg-regulation">
+                    <option value="">All</option>
+                    <option value="up">Upregulated</option>
+                    <option value="down">Downregulated</option>
+                  </select>
+                </label>
+                <button id="deg-apply">Load DEGs</button>
+                <button id="deg-download" class="secondary">Download CSV</button>
+                <button id="deg-reset" class="secondary">Reset</button>
+              </div>
+
+              <div class="table-wrap deg-table-wrap">
+                <table class="sortable-table">
+                  <thead>
+                    <tr id="deg-head"></tr>
+                  </thead>
+                  <tbody id="deg-body"></tbody>
+                </table>
+              </div>
+
+              <div class="volcano-panel">
+              <div class="chart-header">
+                <h3>Volcano Plots by Disease</h3>
+                <span id="volcano-caption" class="panel-caption">Loading volcano plots</span>
+              </div>
+              <main class="volcano-main">
+                <aside class="volcano-controls">
+                  <h3>Disease</h3>
+                  <select id="volcano-disease" size="11"></select>
+                </aside>
+                <div class="volcano-image-frame">
+                  <img id="volcano-image" alt="Volcano plot" hidden />
+                  <p id="volcano-empty">Select a disease to view its volcano plot.</p>
+                </div>
+              </main>
+            </div>
+            </div>
+          </section>
+
+        <section class="panel assistant-panel" aria-labelledby="assistant-title">
+          <div class="chart-header">
+            <h3 id="assistant-title">Ask LiverHomo</h3>
+          </div>
+          <div id="assistant-messages" class="assistant-messages" aria-live="polite"></div>
+          <form id="assistant-form" class="assistant-form">
+            <label class="assistant-label" for="assistant-input">Question</label>
+            <input id="assistant-input" type="text" autocomplete="off" placeholder="Ask about this atlas" required />
+            <button id="assistant-submit" type="submit">Send</button>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <script id="filter-catalog" type="application/json">{{ filter_catalog | tojson }}</script>
+    <script src="{{ url_for('static', filename='multiselect.js') }}"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="{{ url_for('static', filename='assistant.js') }}"></script>
+  </body>
+</html>

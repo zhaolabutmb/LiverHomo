@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resources | LiverHomo Atlas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="{{ url_for('static', filename='navigation.js') }}" defer></script>
+  </head>
+  <body class="atlas-body">
+    <div class="app-shell resources-shell">
+      <header class="app-header">
+        <div class="brand-mark">
+          <img src="{{ url_for('static', filename='utmb-logo.png') }}" alt="UTMB logo" />
+          <span>LiverHomo</span>
+        </div>
+        <button class="nav-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation">
+          <span class="hamburger-icon" aria-hidden="true"></span>
+        </button>
+        <nav id="primary-navigation" class="header-nav" aria-label="Main navigation">
+          <ul class="nav-links">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li class="dropdown">
+              <a href="{{ url_for('atlas_page') }}" class="dropbtn">Atlas ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('atlas_page') }}#explore-view">Atlas Explorer</a>
+                <a href="{{ url_for('atlas_page') }}#expression-view">Gene Expression</a>
+                <a href="{{ url_for('atlas_page') }}#deg-view">DEGs</a>
+              </div>
+            </li>
+            <li class="dropdown">
+              <a href="{{ url_for('graph_page') }}" class="dropbtn">Network ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('graph_page') }}#graph-view">Protein Interaction Network</a>
+                <a href="{{ url_for('graph_page') }}#ego-view">EGO:BP Network</a>
+                <a href="{{ url_for('graph_page') }}#interaction-view">Cell-cell Interaction</a>
+              </div>
+            </li>
+            <li class="dropdown">
+              <a href="{{ url_for('resources_page') }}" class="dropbtn active">Resources ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('resources_page') }}#methods">Methods</a>
+                <a href="{{ url_for('resources_page') }}#datasets">Curated Datasets</a>
+                <a href="{{ url_for('resources_page') }}#metadata">Data Download</a>
+              </div>
+            </li>
+            <li><a href="{{ url_for('contact_page') }}">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <main class="resources-layout">
+        <section id="methods" class="panel introduction-panel" aria-labelledby="introduction-title">
+          <div class="chart-header">
+            <div>
+              <h1 id="introduction-title">Methods</h1>
+            </div>
+          </div>
+          <strong>Acquisition and Preprocessing of scRNAseq Data</strong>
+          <p>Human liver scRNA-seq datasets were systematically curated from public repositories, including: (i) the NCBI Gene Expression Omnibus (GEO); (ii) the Sequence Read Archive (SRA); and (iii) the Tabula Sapiens consortium. Studies were selected based on relevance to human liver tissues across healthy and disease states, with inclusion criteria requiring a 10x Genomics-compatible platform and metadata including species (human only), disease classification, cell-type annotations, and experimental preparation protocols to ensure atlas quality and consistency. Raw sequencing data were processed using a standardized pipeline. FASTQ files were aligned to the human reference genome (GRCh38) with CellRanger (v7.1.0), generating Gene expression count matrices for further analysis. This unified preprocessing workflow ensured comparability across all datasets.</p>
+          <strong>Quality Control and Integration</strong>
+          <p>Gene expression matrices were analyzed using Scanpy from the scverse framework. Standard quality control procedures were applied to remove low-quality cells and potential doublets. Data were normalized, log-transformed, and highly variable genes were selected for downstream analysis. Batch effects across datasets were corrected using Harmony, followed by dimensionality-reduced embeddings using principal component analysis and uniform manifold approximation and projection (UMAP). Cell clustering was conducted using the Leiden algorithm.</p>
+          <strong>Cell-Type Annotation</strong>
+          <p>Cell-type annotation was initially performed with CellTypist to get major cell groups, which was validated with DEG analysis and cross referenced with markers from literature and CellMarker database. More detailed annotation of T cells was performed using starCAT.</p>
+          <strong>Protein Interaction Network</strong>
+          <p>Cell-to-cell interactions were inferred using CellphoneDB. Consensus CCI networks were constructed for each disease condition by retaining interactions consistently observed across iterations.</p>
+          <p>Disease-associated DEG genes were identified for each condition relative to healthy controls using the memento-de method, while cell-type-specific marker genes were identified by contrasting the expression profiles of each cell type with those of all other cell types in the healthy cohort. The subset of all upregulated genes were provided to PrePPI to create protein protein interaction networks. For each cell type, two complementary PPI subnetworks were constructed by intersecting the prior network with the gene sets defined above: (i) a baseline subnetwork comprising interactions among cell-type–specific marker genes, representing constitutive cellular wiring, and (ii) disease-specific subnetworks comprising interactions among genes upregulated in each disease condition, capturing pathology-driven rewiring. Interactions were retained only among genes with detectable expression in the corresponding cell-type and were further prioritized by PrePPI-AF LR score and structural compatibility.</p>
+          <strong>Annotation and Enrichment Analysis</strong>
+          <p>The reviewed dataset from UniProt was utilized to annotate gene products. Finally, Gene Ontology (GO) enrichment analysis was performed to identify biological processes associated with the network.</p>
+        </section>
+
+        <section id="datasets" class="panel curated-datasets-panel" aria-labelledby="curated-datasets-title">
+          <div class="chart-header">
+            <div>
+              <h1 id="curated-datasets-title">Curated Datasets</h1>
+            </div>
+          </div>
+          <div class="curated-datasets-wrap">
+            <table class="curated-datasets-table">
+              <thead>
+                <tr>
+                  <th scope="col">Dataset</th>
+                  <th scope="col">Publication year</th>
+                  <th scope="col">Organization</th>
+                  <th scope="col">Platform</th>
+                  <th scope="col">Cells</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE136103" target="_blank" rel="noopener">GSE136103</a></td><td>2019</td><td>University of Edinburgh</td><td>Illumina HiSeq 4000</td><td>57,677</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE149614" target="_blank" rel="noopener">GSE149614</a></td><td>2021</td><td>State Key Laboratory of Proteomics, Beijing Proteome Research Center, Beijing Institute of Radiation Medicine</td><td>Illumina NovaSeq 6000</td><td>68,985</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE151530" target="_blank" rel="noopener">GSE151530</a></td><td>2021</td><td>National Cancer Institute</td><td>Illumina NextSeq 500; Illumina HiSeq 4000; Illumina NovaSeq 6000</td><td>48,973</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE156625" target="_blank" rel="noopener">GSE156625</a></td><td>2021</td><td>Genome Institute Of Singapore</td><td>Illumina HiSeq 2500</td><td>44,410</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE159977" target="_blank" rel="noopener">GSE159977</a></td><td>2021</td><td>M3 Forschungszentrum f&uuml;r Malignom, Metabolom und Mikrobiom</td><td>Illumina NovaSeq 6000</td><td>80,056</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE169446" target="_blank" rel="noopener">GSE169446</a></td><td>2021</td><td>Weizmann Institute of Science</td><td>Illumina NovaSeq 6000</td><td>9,210</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE171900" target="_blank" rel="noopener">GSE171900</a></td><td>2021</td><td>Istituto Clinico Humanitas</td><td>NextSeq 550</td><td>28,531</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE189903" target="_blank" rel="noopener">GSE189903</a></td><td>2022</td><td>National Cancer Institute</td><td>Illumina NovaSeq 6000</td><td>109,767</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE192742" target="_blank" rel="noopener">GSE192742</a></td><td>2022</td><td>VIB-University of Ghent</td><td>Illumina HiSeq 4000; Illumina NovaSeq 6000</td><td>187,162</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE236382" target="_blank" rel="noopener">GSE236382</a></td><td>2024</td><td>Shandong University</td><td>HiSeq X Ten</td><td>25,668</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE242889" target="_blank" rel="noopener">GSE242889</a></td><td>2024</td><td>Wenzhou Medical University</td><td>Illumina NovaSeq 6000</td><td>42,443</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE243981" target="_blank" rel="noopener">GSE243981</a></td><td>2024</td><td>University of Toronto</td><td>Illumina HiSeq 2500; Illumina NovaSeq 6000</td><td>275,106</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/bioproject/PRJNA836868" target="_blank" rel="noopener">PRJNA836868</a></td><td>2022</td><td>Zhongshan Hospital</td><td>Illumina NovaSeq 6000</td><td>93,724</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/bioproject/PRJNA932937" target="_blank" rel="noopener">PRJNA932937</a></td><td>2023</td><td>University of Hong Kong</td><td>Illumina NovaSeq 6000</td><td>38,409</td></tr>
+                <tr><td><a href="https://www.ncbi.nlm.nih.gov/bioproject/PRJNA947270" target="_blank" rel="noopener">PRJNA947270</a></td><td>2023</td><td>The First Hospital of Jilin University</td><td>Illumina NovaSeq 6000</td><td>39,765</td></tr>
+                <tr><td><a href="https://www.science.org/doi/10.1126/science.abl4896" target="_blank" rel="noopener">Liver_TSP1_Nov122024</a></td><td>2022</td><td>Tabula Sapiens Consortium</td><td>10x Genomics Chromium; Illumina NovaSeq 6000</td><td>7,248</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="metadata" class="panel results-panel" aria-labelledby="resources-title">
+          <div class="chart-header">
+            <div>
+              <h1 id="resources-title">Data Download</h1>
+            </div>
+          </div>
+          <p>Download the LiverHomo metadata dataset.</p>
+          <a class="download-link" href="{{ url_for('metadata_download') }}">
+            Download adata_reprocessed_gzip.h5ad
+          </a>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1370 @@
+{
+  "metadata": {
+    "diseases": [
+      "Healthy",
+      "HCC",
+      "Adjacent Normal",
+      "MASH",
+      "iCCA",
+      "PSC",
+      "ALD",
+      "Cirrhosis",
+      "PBC",
+      "PVTT",
+      "MLN",
+      "Fetal"
+    ],
+    "cell_types": [
+      "Hepatocyte",
+      "Circulating_NK_NKT",
+      "Mono+mono_derived_cell",
+      "CD4_EM",
+      "CD4_CM",
+      "Macrophage",
+      "Resident_NK",
+      "CD8_CM",
+      "CD4_Naive",
+      "Endothelium",
+      "CD8_Naive",
+      "B_cell",
+      "Cholangiocyte",
+      "CD8_EM",
+      "Treg",
+      "Stellate_cell",
+      "cDC2",
+      "Plasma",
+      "Neutrophil",
+      "MAIT"
+    ]
+  },
+  "deg": {
+    "diseases": [
+      "ALD",
+      "Adjacent Normal",
+      "Cirrhosis",
+      "Fetal",
+      "HCC",
+      "MASH",
+      "MLN",
+      "PBC",
+      "PSC",
+      "PVTT",
+      "iCCA"
+    ],
+    "cell_types": [
+      "B_cell",
+      "B_cell_adjacent",
+      "Basophil",
+      "Basophil_adjacent",
+      "CD4_CM",
+      "CD4_CM_adjacent",
+      "CD4_EM",
+      "CD4_EM_adjacent",
+      "CD4_Naive",
+      "CD4_Naive_adjacent",
+      "CD8_CM",
+      "CD8_CM_adjacent",
+      "CD8_EM",
+      "CD8_EM_adjacent",
+      "CD8_Naive",
+      "CD8_Naive_adjacent",
+      "CD8_TEMRA",
+      "CD8_TEMRA_adjacent",
+      "Cholangiocyte",
+      "Circulating_NK_NKT",
+      "Circulating_NK_NKT_adjacent",
+      "Endothelium",
+      "Endothelium_adjacent",
+      "Hepatocyte",
+      "MAIT",
+      "MAIT_adjacent",
+      "Macrophage",
+      "Macrophage_adjacent",
+      "Mig.cDC",
+      "Mig.cDC_adjacent",
+      "Mono+mono_derived_cell",
+      "Mono+mono_derived_cell_adjacent",
+      "Neutrophil",
+      "Neutrophil_adjacent",
+      "Plasma",
+      "Plasma_adjacent",
+      "Resident_NK",
+      "Resident_NK_adjacent",
+      "Stellate_cell",
+      "Treg",
+      "Treg_adjacent",
+      "cDC1",
+      "cDC1_adjacent",
+      "cDC2",
+      "cDC2_adjacent",
+      "gdT",
+      "gdT_adjacent",
+      "pDC",
+      "pDC_adjacent"
+    ],
+    "files": 292
+  },
+  "volcano_diseases": [
+    "ALD",
+    "Adjacent Normal",
+    "Cirrhosis",
+    "Fetal",
+    "HCC",
+    "MASH",
+    "MLN",
+    "PBC",
+    "PSC",
+    "PVTT",
+    "iCCA"
+  ],
+  "graph": {
+    "files": 286,
+    "diseases": [
+      "ALD",
+      "Cirrhosis",
+      "Fetal",
+      "HCC",
+      "Healthy",
+      "MASH",
+      "MLN",
+      "PBC",
+      "PSC",
+      "PVTT",
+      "iCCA"
+    ],
+    "cell_types": [
+      "B_cell",
+      "Basophil",
+      "CD4_CM",
+      "CD4_EM",
+      "CD4_Naive",
+      "CD8_CM",
+      "CD8_EM",
+      "CD8_Naive",
+      "CD8_TEMRA",
+      "Cholangiocyte",
+      "Circulating_NK_NKT",
+      "Endothelium",
+      "Hepatocyte",
+      "MAIT",
+      "Macrophage",
+      "Mig.cDC",
+      "Mono+mono_derived_cell",
+      "Neutrophil",
+      "Plasma",
+      "Resident_NK",
+      "Stellate_cell",
+      "Treg",
+      "cDC1",
+      "cDC2",
+      "gdT",
+      "pDC"
+    ]
+  },
+  "ego": [
+    {
+      "disease": "ALD",
+      "cell_type": "B_cell",
+      "filename": "ALD_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Basophil",
+      "filename": "ALD_Basophil_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "CD4_CM",
+      "filename": "ALD_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "CD4_EM",
+      "filename": "ALD_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "CD4_Naive",
+      "filename": "ALD_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "CD8_CM",
+      "filename": "ALD_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "CD8_EM",
+      "filename": "ALD_CD8_EM_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "CD8_Naive",
+      "filename": "ALD_CD8_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "CD8_TEMRA",
+      "filename": "ALD_CD8_TEMRA_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Cholangiocyte",
+      "filename": "ALD_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "ALD_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Endothelium",
+      "filename": "ALD_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Hepatocyte",
+      "filename": "ALD_Hepatocyte_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "MAIT",
+      "filename": "ALD_MAIT_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Macrophage",
+      "filename": "ALD_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Mig.cDC",
+      "filename": "ALD_Mig.cDC_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "ALD_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Neutrophil",
+      "filename": "ALD_Neutrophil_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Plasma",
+      "filename": "ALD_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Resident_NK",
+      "filename": "ALD_Resident_NK_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Stellate_cell",
+      "filename": "ALD_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "Treg",
+      "filename": "ALD_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "all",
+      "filename": "ALD_all_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "cDC1",
+      "filename": "ALD_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "cDC2",
+      "filename": "ALD_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "gdT",
+      "filename": "ALD_gdT_ego_ppi.png"
+    },
+    {
+      "disease": "ALD",
+      "cell_type": "pDC",
+      "filename": "ALD_pDC_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "B_cell",
+      "filename": "Cirrhosis_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Basophil",
+      "filename": "Cirrhosis_Basophil_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "CD4_CM",
+      "filename": "Cirrhosis_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "CD4_EM",
+      "filename": "Cirrhosis_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "CD4_Naive",
+      "filename": "Cirrhosis_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "CD8_CM",
+      "filename": "Cirrhosis_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "CD8_EM",
+      "filename": "Cirrhosis_CD8_EM_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "CD8_Naive",
+      "filename": "Cirrhosis_CD8_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "CD8_TEMRA",
+      "filename": "Cirrhosis_CD8_TEMRA_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Cholangiocyte",
+      "filename": "Cirrhosis_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "Cirrhosis_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Endothelium",
+      "filename": "Cirrhosis_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Hepatocyte",
+      "filename": "Cirrhosis_Hepatocyte_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "MAIT",
+      "filename": "Cirrhosis_MAIT_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Macrophage",
+      "filename": "Cirrhosis_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "Cirrhosis_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Neutrophil",
+      "filename": "Cirrhosis_Neutrophil_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Plasma",
+      "filename": "Cirrhosis_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Resident_NK",
+      "filename": "Cirrhosis_Resident_NK_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Stellate_cell",
+      "filename": "Cirrhosis_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "Treg",
+      "filename": "Cirrhosis_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "all",
+      "filename": "Cirrhosis_all_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "cDC1",
+      "filename": "Cirrhosis_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "cDC2",
+      "filename": "Cirrhosis_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "gdT",
+      "filename": "Cirrhosis_gdT_ego_ppi.png"
+    },
+    {
+      "disease": "Cirrhosis",
+      "cell_type": "pDC",
+      "filename": "Cirrhosis_pDC_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "B_cell",
+      "filename": "Fetal_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "Basophil",
+      "filename": "Fetal_Basophil_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "CD4_Naive",
+      "filename": "Fetal_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "CD8_CM",
+      "filename": "Fetal_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "CD8_Naive",
+      "filename": "Fetal_CD8_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "Cholangiocyte",
+      "filename": "Fetal_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "Fetal_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "Endothelium",
+      "filename": "Fetal_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "Hepatocyte",
+      "filename": "Fetal_Hepatocyte_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "Macrophage",
+      "filename": "Fetal_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "Fetal_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "Stellate_cell",
+      "filename": "Fetal_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "all",
+      "filename": "Fetal_all_ego_ppi.png"
+    },
+    {
+      "disease": "Fetal",
+      "cell_type": "cDC2",
+      "filename": "Fetal_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "B_cell",
+      "filename": "HCC_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Basophil",
+      "filename": "HCC_Basophil_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "CD4_CM",
+      "filename": "HCC_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "CD4_EM",
+      "filename": "HCC_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "CD4_Naive",
+      "filename": "HCC_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "CD8_CM",
+      "filename": "HCC_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "CD8_EM",
+      "filename": "HCC_CD8_EM_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "CD8_Naive",
+      "filename": "HCC_CD8_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "CD8_TEMRA",
+      "filename": "HCC_CD8_TEMRA_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Cholangiocyte",
+      "filename": "HCC_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "HCC_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Endothelium",
+      "filename": "HCC_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Hepatocyte",
+      "filename": "HCC_Hepatocyte_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "MAIT",
+      "filename": "HCC_MAIT_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Macrophage",
+      "filename": "HCC_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Mig.cDC",
+      "filename": "HCC_Mig.cDC_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "HCC_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Neutrophil",
+      "filename": "HCC_Neutrophil_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Plasma",
+      "filename": "HCC_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Resident_NK",
+      "filename": "HCC_Resident_NK_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Stellate_cell",
+      "filename": "HCC_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "Treg",
+      "filename": "HCC_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "all",
+      "filename": "HCC_all_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "cDC1",
+      "filename": "HCC_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "cDC2",
+      "filename": "HCC_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "gdT",
+      "filename": "HCC_gdT_ego_ppi.png"
+    },
+    {
+      "disease": "HCC",
+      "cell_type": "pDC",
+      "filename": "HCC_pDC_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "B_cell",
+      "filename": "MASH_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Basophil",
+      "filename": "MASH_Basophil_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "CD4_CM",
+      "filename": "MASH_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "CD4_EM",
+      "filename": "MASH_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "CD4_Naive",
+      "filename": "MASH_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "CD8_CM",
+      "filename": "MASH_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "CD8_EM",
+      "filename": "MASH_CD8_EM_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "CD8_Naive",
+      "filename": "MASH_CD8_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "CD8_TEMRA",
+      "filename": "MASH_CD8_TEMRA_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "MASH_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "MAIT",
+      "filename": "MASH_MAIT_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Macrophage",
+      "filename": "MASH_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Mig.cDC",
+      "filename": "MASH_Mig.cDC_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "MASH_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Neutrophil",
+      "filename": "MASH_Neutrophil_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Plasma",
+      "filename": "MASH_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Resident_NK",
+      "filename": "MASH_Resident_NK_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "Treg",
+      "filename": "MASH_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "all",
+      "filename": "MASH_all_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "cDC1",
+      "filename": "MASH_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "cDC2",
+      "filename": "MASH_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "gdT",
+      "filename": "MASH_gdT_ego_ppi.png"
+    },
+    {
+      "disease": "MASH",
+      "cell_type": "pDC",
+      "filename": "MASH_pDC_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "B_cell",
+      "filename": "MLN_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "CD4_CM",
+      "filename": "MLN_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "CD4_EM",
+      "filename": "MLN_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "CD4_Naive",
+      "filename": "MLN_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "CD8_CM",
+      "filename": "MLN_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Cholangiocyte",
+      "filename": "MLN_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "MLN_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Endothelium",
+      "filename": "MLN_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Hepatocyte",
+      "filename": "MLN_Hepatocyte_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Macrophage",
+      "filename": "MLN_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "MLN_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Plasma",
+      "filename": "MLN_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Stellate_cell",
+      "filename": "MLN_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "Treg",
+      "filename": "MLN_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "all",
+      "filename": "MLN_all_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "cDC1",
+      "filename": "MLN_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "MLN",
+      "cell_type": "cDC2",
+      "filename": "MLN_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "B_cell",
+      "filename": "PBC_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Basophil",
+      "filename": "PBC_Basophil_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "CD4_CM",
+      "filename": "PBC_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "CD4_EM",
+      "filename": "PBC_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "CD4_Naive",
+      "filename": "PBC_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "CD8_CM",
+      "filename": "PBC_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "CD8_EM",
+      "filename": "PBC_CD8_EM_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "CD8_Naive",
+      "filename": "PBC_CD8_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "CD8_TEMRA",
+      "filename": "PBC_CD8_TEMRA_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Cholangiocyte",
+      "filename": "PBC_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "PBC_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Endothelium",
+      "filename": "PBC_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Hepatocyte",
+      "filename": "PBC_Hepatocyte_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "MAIT",
+      "filename": "PBC_MAIT_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Macrophage",
+      "filename": "PBC_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Mig.cDC",
+      "filename": "PBC_Mig.cDC_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "PBC_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Plasma",
+      "filename": "PBC_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Resident_NK",
+      "filename": "PBC_Resident_NK_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Stellate_cell",
+      "filename": "PBC_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "Treg",
+      "filename": "PBC_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "all",
+      "filename": "PBC_all_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "cDC1",
+      "filename": "PBC_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "cDC2",
+      "filename": "PBC_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "gdT",
+      "filename": "PBC_gdT_ego_ppi.png"
+    },
+    {
+      "disease": "PBC",
+      "cell_type": "pDC",
+      "filename": "PBC_pDC_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "B_cell",
+      "filename": "PSC_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Basophil",
+      "filename": "PSC_Basophil_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "CD4_CM",
+      "filename": "PSC_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "CD4_EM",
+      "filename": "PSC_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "CD4_Naive",
+      "filename": "PSC_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "CD8_CM",
+      "filename": "PSC_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "CD8_EM",
+      "filename": "PSC_CD8_EM_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "CD8_Naive",
+      "filename": "PSC_CD8_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "CD8_TEMRA",
+      "filename": "PSC_CD8_TEMRA_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Cholangiocyte",
+      "filename": "PSC_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "PSC_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Endothelium",
+      "filename": "PSC_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Hepatocyte",
+      "filename": "PSC_Hepatocyte_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "MAIT",
+      "filename": "PSC_MAIT_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Macrophage",
+      "filename": "PSC_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Mig.cDC",
+      "filename": "PSC_Mig.cDC_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "PSC_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Neutrophil",
+      "filename": "PSC_Neutrophil_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Plasma",
+      "filename": "PSC_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Resident_NK",
+      "filename": "PSC_Resident_NK_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Stellate_cell",
+      "filename": "PSC_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "Treg",
+      "filename": "PSC_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "all",
+      "filename": "PSC_all_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "cDC1",
+      "filename": "PSC_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "cDC2",
+      "filename": "PSC_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "gdT",
+      "filename": "PSC_gdT_ego_ppi.png"
+    },
+    {
+      "disease": "PSC",
+      "cell_type": "pDC",
+      "filename": "PSC_pDC_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "B_cell",
+      "filename": "PVTT_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "CD4_CM",
+      "filename": "PVTT_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "CD4_EM",
+      "filename": "PVTT_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "CD4_Naive",
+      "filename": "PVTT_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "CD8_CM",
+      "filename": "PVTT_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Cholangiocyte",
+      "filename": "PVTT_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "PVTT_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Endothelium",
+      "filename": "PVTT_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Macrophage",
+      "filename": "PVTT_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Mig.cDC",
+      "filename": "PVTT_Mig.cDC_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "PVTT_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Plasma",
+      "filename": "PVTT_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Stellate_cell",
+      "filename": "PVTT_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "Treg",
+      "filename": "PVTT_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "all",
+      "filename": "PVTT_all_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "cDC1",
+      "filename": "PVTT_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "cDC2",
+      "filename": "PVTT_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "PVTT",
+      "cell_type": "pDC",
+      "filename": "PVTT_pDC_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "B_cell",
+      "filename": "iCCA_B_cell_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Basophil",
+      "filename": "iCCA_Basophil_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "CD4_CM",
+      "filename": "iCCA_CD4_CM_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "CD4_EM",
+      "filename": "iCCA_CD4_EM_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "CD4_Naive",
+      "filename": "iCCA_CD4_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "CD8_CM",
+      "filename": "iCCA_CD8_CM_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "CD8_EM",
+      "filename": "iCCA_CD8_EM_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "CD8_Naive",
+      "filename": "iCCA_CD8_Naive_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "CD8_TEMRA",
+      "filename": "iCCA_CD8_TEMRA_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Cholangiocyte",
+      "filename": "iCCA_Cholangiocyte_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Circulating_NK_NKT",
+      "filename": "iCCA_Circulating_NK_NKT_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Endothelium",
+      "filename": "iCCA_Endothelium_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Hepatocyte",
+      "filename": "iCCA_Hepatocyte_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "MAIT",
+      "filename": "iCCA_MAIT_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Macrophage",
+      "filename": "iCCA_Macrophage_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Mig.cDC",
+      "filename": "iCCA_Mig.cDC_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Mono+mono_derived_cell",
+      "filename": "iCCA_Mono+mono_derived_cell_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Neutrophil",
+      "filename": "iCCA_Neutrophil_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Plasma",
+      "filename": "iCCA_Plasma_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Resident_NK",
+      "filename": "iCCA_Resident_NK_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Stellate_cell",
+      "filename": "iCCA_Stellate_cell_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "Treg",
+      "filename": "iCCA_Treg_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "all",
+      "filename": "iCCA_all_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "cDC1",
+      "filename": "iCCA_cDC1_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "cDC2",
+      "filename": "iCCA_cDC2_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "gdT",
+      "filename": "iCCA_gdT_ego_ppi.png"
+    },
+    {
+      "disease": "iCCA",
+      "cell_type": "pDC",
+      "filename": "iCCA_pDC_ego_ppi.png"
+    }
+  ],
+  "cell_interactions": {
+    "diseases": [
+      "ALD",
+      "Adjacent Normal",
+      "Cirrhosis",
+      "Fetal",
+      "HCC",
+      "Healthy",
+      "MASH",
+      "MLN",
+      "PBC",
+      "PSC",
+      "PVTT",
+      "iCCA"
+    ],
+    "cell_types": [
+      "B_cell",
+      "Basophil",
+      "CD4_CM",
+      "CD4_EM",
+      "CD4_Naive",
+      "CD8_CM",
+      "CD8_EM",
+      "CD8_Naive",
+      "CD8_TEMRA",
+      "Cholangiocyte",
+      "Circulating_NK/NKT",
+      "Endothelium",
+      "Hepatocyte",
+      "MAIT",
+      "Macrophage",
+      "Mig.cDC",
+      "Mono+mono_derived_cell",
+      "Neutrophil",
+      "Plasma",
+      "Resident_NK",
+      "Stellate_cell",
+      "Treg",
+      "cDC1",
+      "cDC2",
+      "gdT",
+      "pDC"
+    ]
+  }
+}

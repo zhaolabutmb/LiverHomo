@@ -1,0 +1,12 @@
+flask
+werkzeug
+python-dotenv
+tiktoken
+gunicorn
+anndata
+pandas
+numpy
+networkx
+seaborn
+matplotlib
+openpyxl>=3.1.0

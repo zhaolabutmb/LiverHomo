@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LiverHomo Atlas</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="{{ url_for('static', filename='navigation.js') }}" defer></script>
+  </head>
+  <body class="landing-body">
+    <main class="landing-shell">
+      <header class="app-header">
+        <div class="brand-mark">
+          <img src="{{ url_for('static', filename='utmb-logo.png') }}" alt="UTMB logo" />
+          <span>LiverHomo</span>
+        </div>
+        <button class="nav-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation">
+          <span class="hamburger-icon" aria-hidden="true"></span>
+        </button>
+        <nav id="primary-navigation" class="header-nav" aria-label="Main navigation">
+          <ul class="nav-links">
+            <li><a href="{{ url_for('index') }}" class="active">Home</a></li>
+            <li class="dropdown">
+              <a href="{{ url_for('atlas_page') }}" class="dropbtn">Atlas ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('atlas_page') }}#explore-view">Atlas Explorer</a>
+                <a href="{{ url_for('atlas_page') }}#expression-view">Gene Expression</a>
+                <a href="{{ url_for('atlas_page') }}#deg-view">DEGs</a>
+              </div>
+            </li>
+            <li class="dropdown">
+              <a href="{{ url_for('graph_page') }}" class="dropbtn">Network ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('graph_page') }}#graph-view">Protein Interaction Network</a>
+                <a href="{{ url_for('graph_page') }}#ego-view">EGO:BP Network</a>
+                <a href="{{ url_for('graph_page') }}#interaction-view">Cell-cell Interaction</a>
+              </div>
+            </li>
+            <li class="dropdown">
+              <a href="{{ url_for('resources_page') }}" class="dropbtn">Resources ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('resources_page') }}#methods">Methods</a>
+                <a href="{{ url_for('resources_page') }}#datasets">Curated Datasets</a>
+                <a href="{{ url_for('resources_page') }}#metadata">Data Download</a>
+              </div>
+            </li>
+            <li><a href="{{ url_for('contact_page') }}">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <section class="landing-hero" aria-labelledby="landing-title">
+        <div class="landing-about">
+          <p class="landing-kicker">A single-cell atlas for human liver biology</p>
+          <h1 id="landing-title">LiverHomo<br /><span>Atlas Explorer</span></h1>
+          <p class="landing-intro">
+            Navigate cell states, disease signatures, expression patterns, and protein-protein interaction networks across healthy and diseased human liver contexts.
+          </p>
+          <div class="landing-rule" aria-hidden="true"></div>
+          <div class="landing-about-copy">
+            <h2>About LiverHomo Portal</h2>
+            <p>
+              LiverHomo integrates 16 publicly available scRNA-seq datasets from 2019–2024 into a harmonized atlas of 1.16 million high-quality single cells across healthy and major liver disease contexts. Beyond single-cell transcriptomics, LiverHomo connects gene expression and disease-associated changes with cell–cell communication and context-specific protein interaction networks. This portal enables fast and interactive exploratory analysis of these data across diseases and cell types.
+            </p>
+            <a class="view-datasets-button" href="/resources">View all datasets</a>
+          </div>
+        </div>
+
+        <aside class="landing-actions" aria-labelledby="explore-title">
+          <p class="landing-kicker" id="explore-title">Choose a view</p>
+          <a class="explorer-button atlas-button" href="/atlas">
+            <span class="explorer-index">01</span>
+            <span class="explorer-copy">
+              <strong>Atlas Explorer</strong>
+              <small>Explore cell populations, gene expression, and transcriptional changes across liver diseases.</small>
+              <small>Includes differentially expressed genes (DEGs) analysis, gene expression data, and UMAPs of cell populations.</small>
+            </span>
+            <span class="explorer-arrow" aria-hidden="true">-&gt;</span>
+          </a>
+          <a class="explorer-button graph-button" href="/graph">
+            <span class="explorer-index">02</span>
+            <span class="explorer-copy">
+              <strong>Network Explorer</strong>
+              <small>Explore cell-cell communication and context-specific protein interaction network.</small>
+              <small>Includes cell to cell interaction data, context specific protein interaction networks, and Gene Ontology (GO) annotated networks.</small>
+            </span>
+            <span class="explorer-arrow" aria-hidden="true">-&gt;</span>
+          </a>
+          <a class="explorer-button resources-button" href="/resources">
+            <span class="explorer-index">03</span>
+            <span class="explorer-copy">
+              <strong>Resources</strong>
+              <small>Browse metadata and other supplemental resources from the atlas</small>
+            </span>
+            <span class="explorer-arrow" aria-hidden="true">-&gt;</span>
+          </a>
+          <a class="explorer-button contact-button" href="/contact">
+            <span class="explorer-index">04</span>
+            <span class="explorer-copy">
+              <strong>Contact Us</strong>
+              <small>Send feedback or questions to the atlas team</small>
+            </span>
+            <span class="explorer-arrow" aria-hidden="true">-&gt;</span>
+          </a>
+        </aside>
+      </section>
+
+      <section class="landing-coverage" aria-labelledby="database-title">
+        <div class="disease-coverage" aria-labelledby="disease-coverage-title">
+          <h2 id="disease-coverage-title">Disease coverage</h2>
+          <div id="disease-coverage-links" class="disease-coverage-links" aria-live="polite"></div>
+        </div>
+      </section>
+      
+      <section class="landing-database" aria-labelledby="database-title">
+        <div class="landing-database-heading">
+          <h2 id="database-title">Cell composition by disease</h2>
+        </div>
+        <div class="composition-layout">
+          <aside class="composition-filters" aria-label="Cell composition filters">
+            <label for="composition-disease">Disease</label>
+            <select id="composition-disease" multiple size="8"></select>
+            <label for="composition-cell-type">Cell type</label>
+            <select id="composition-cell-type" multiple size="8"></select>
+            <button id="composition-reset" class="secondary" type="button">Reset filters</button>
+          </aside>
+          <div class="landing-table-wrap">
+            <table class="landing-table">
+              <thead>
+                <tr>
+                  <th scope="col">Disease</th>
+                  <th scope="col">Cell type</th>
+                  <th scope="col">Cell count</th>
+                </tr>
+              </thead>
+              <tbody id="composition-body">
+                <tr><td colspan="3">Loading static composition snapshot...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel assistant-panel landing-assistant" aria-labelledby="assistant-title">
+        <div class="landing-database-heading">
+          <h2 id="assistant-title">Ask LiverHomo</h2>
+        </div>
+        <div id="assistant-messages" class="assistant-messages" aria-live="polite"></div>
+        <form id="assistant-form" class="assistant-form">
+          <label class="assistant-label" for="assistant-input">Question</label>
+          <input id="assistant-input" type="text" autocomplete="off" placeholder="Ask about this atlas" required />
+          <button id="assistant-submit" type="submit">Send</button>
+        </form>
+      </section>
+
+      <script>
+        const atlasDiseaseNames = {
+          "Alcoholic Liver Disesase (ALD)": "ALD",
+          "Hepatocellular Carcinoma (HCC)": "HCC",
+          "Metabolic Dysfunction-Associated Steatohepatitis (MASH)": "MASH",
+          "Metastatic Lymph Nodes (MLN)": "MLN",
+          "Primary Biliary Cholangitis (PBC)": "PBC",
+          "Primary Sclerosing Cholangitis (PSC)": "PSC",
+          "Portal Vein Tumor Thrombus (PVTT)": "PVTT",
+          "Intrahepatic Cholangiocarcinoma (iCCA)": "iCCA"
+        };
+        const diseaseColors = {
+          "ALD": ["#a34c14", "#fff1e4"],
+          "Adjacent Normal": ["#52677b", "#eef3f7"],
+          "Cirrhosis": ["#754a9c", "#f5effa"],
+          "Fetal": ["#b54772", "#fff0f6"],
+          "HCC": ["#a63434", "#fff0f0"],
+          "Healthy": ["#287957", "#eaf8f1"],
+          "MASH": ["#bf650d", "#fff3e8"],
+          "MLN": ["#22779a", "#eaf7fb"],
+          "PBC": ["#0d756d", "#e8f8f6"],
+          "PSC": ["#3e5d9c", "#eef2fb"],
+          "PVTT": ["#a43d5b", "#fff0f3"],
+          "iCCA": ["#7a5945", "#f8f1ed"]
+        };
+
+        fetch("/static/composition.json")
+          .then((response) => response.json())
+          .then((composition) => {
+            const body = document.getElementById("composition-body");
+            const coverageLinks = document.getElementById("disease-coverage-links");
+            const diseaseFilter = document.getElementById("composition-disease");
+            const cellTypeFilter = document.getElementById("composition-cell-type");
+            const resetButton = document.getElementById("composition-reset");
+            coverageLinks.replaceChildren();
+
+            Object.entries(composition).forEach(([disease, cells]) => {
+              const atlasDisease = atlasDiseaseNames[disease] || disease;
+              if (atlasDisease !== "Adjacent Normal") {
+                const [color, tint] = diseaseColors[atlasDisease] || ["#2d6fb4", "#edf5ff"];
+                const diseaseLink = document.createElement("a");
+                diseaseLink.className = "disease-coverage-link";
+                diseaseLink.href = `/atlas?disease=${encodeURIComponent(atlasDisease)}`;
+                diseaseLink.textContent = disease;
+                diseaseLink.style.setProperty("--disease-color", color);
+                diseaseLink.style.setProperty("--disease-tint", tint);
+                coverageLinks.appendChild(diseaseLink);
+              }
+            });
+
+            const diseases = Object.keys(composition);
+            const cellTypes = [...new Set(Object.values(composition).flatMap((cells) => Object.keys(cells)))].sort();
+            const populateFilter = (select, values, formatLabel = (value) => value.replaceAll("_", " ")) => {
+              values.forEach((value) => {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = formatLabel(value);
+                option.selected = true;
+                select.appendChild(option);
+              });
+            };
+
+            const selectedValues = (select) => new Set([...select.selectedOptions].map((option) => option.value));
+            const renderComposition = () => {
+              const selectedDiseases = selectedValues(diseaseFilter);
+              const selectedCellTypes = selectedValues(cellTypeFilter);
+              body.replaceChildren();
+
+              diseases.forEach((disease) => {
+                if (!selectedDiseases.has(disease)) return;
+                const entries = Object.entries(composition[disease]).filter(([cellType]) => selectedCellTypes.has(cellType));
+                if (entries.length === 0) return;
+
+                const total = entries.reduce((sum, [, count]) => sum + count, 0);
+
+                entries.forEach(([cellType, count], index) => {
+                  const row = document.createElement("tr");
+                  if (index === 0) {
+                    const diseaseCell = document.createElement("td");
+                    diseaseCell.rowSpan = entries.length + 1;
+                    diseaseCell.textContent = disease;
+                    row.appendChild(diseaseCell);
+                  }
+
+                  const cellTypeCell = document.createElement("td");
+                  cellTypeCell.textContent = cellType.replaceAll("_", " ");
+                  row.appendChild(cellTypeCell);
+
+                  const countCell = document.createElement("td");
+                  countCell.textContent = count.toLocaleString();
+                  row.appendChild(countCell);
+                  body.appendChild(row);
+                });
+
+                const totalRow = document.createElement("tr");
+                const totalCellTypeCell = document.createElement("td");
+                totalCellTypeCell.textContent = "Total";
+                totalCellTypeCell.style.fontWeight = "700";
+                totalRow.appendChild(totalCellTypeCell);
+
+                const totalCountCell = document.createElement("td");
+                totalCountCell.textContent = total.toLocaleString();
+                totalCountCell.style.fontWeight = "700";
+                totalRow.appendChild(totalCountCell);
+                body.appendChild(totalRow);
+              });
+
+              if (body.children.length === 0) {
+                body.innerHTML = '<tr><td colspan="3">No cell composition data matches these filters.</td></tr>';
+              }
+            };
+
+            populateFilter(diseaseFilter, diseases, (disease) => atlasDiseaseNames[disease] || disease);
+            populateFilter(cellTypeFilter, cellTypes);
+            diseaseFilter.addEventListener("change", renderComposition);
+            cellTypeFilter.addEventListener("change", renderComposition);
+            resetButton.addEventListener("click", () => {
+              [...diseaseFilter.options, ...cellTypeFilter.options].forEach((option) => {
+                option.selected = true;
+              });
+              renderComposition();
+            });
+            renderComposition();
+          })
+          .catch(() => {
+            document.getElementById("composition-body").innerHTML =
+              '<tr><td colspan="3">Composition snapshot unavailable.</td></tr>';
+          });
+      </script>
+
+      <section class="landing-citation" aria-labelledby="citation-title">
+        <div class="landing-citation-content">
+          <h2 id="citation-title">Citation</h2>
+          <p>
+            If you use this portal in your research, please cite:
+            <a href="https://www.biorxiv.org/content/10.64898/2026.08.07.743628v1" target="_blank" rel="noopener">
+              Shi, Ziyu, et al. LIVERDCP: A Disease-Cell-Protein Framework for Multi-Scale Modeling of Disease Biology, 10 Aug. 2026, https://doi.org/10.64898/2026.08.07.743628. 
+            </a>
+          </p>
+        </div>
+      </section>
+
+      <footer class="landing-footer">
+        <span>Single-cell liver research portal</span>
+        <span>UTMB</span>
+      </footer>
+    </main>
+    <script src="/static/multiselect.js"></script>
+    <script src="/static/assistant.js"></script>
+  </body>
+</html>

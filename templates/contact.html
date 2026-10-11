@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Us | LiverHomo Atlas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="{{ url_for('static', filename='navigation.js') }}" defer></script>
+  </head>
+  <body class="atlas-body">
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand-mark">
+          <img src="{{ url_for('static', filename='utmb-logo.png') }}" alt="UTMB logo" />
+          <span>LiverHomo</span>
+        </div>
+        <button class="nav-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation">
+          <span class="hamburger-icon" aria-hidden="true"></span>
+        </button>
+        <nav id="primary-navigation" class="header-nav" aria-label="Main navigation">
+          <ul class="nav-links">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li class="dropdown">
+              <a href="{{ url_for('atlas_page') }}" class="dropbtn">Atlas ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('atlas_page') }}#explore-view">Atlas Explorer</a>
+                <a href="{{ url_for('atlas_page') }}#expression-view">Gene Expression</a>
+                <a href="{{ url_for('atlas_page') }}#deg-view">DEGs</a>
+              </div>
+            </li>
+            <li class="dropdown">
+              <a href="{{ url_for('graph_page') }}" class="dropbtn">Network ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('graph_page') }}#graph-view">Protein Interaction Network</a>
+                <a href="{{ url_for('graph_page') }}#ego-view">EGO:BP Network</a>
+                <a href="{{ url_for('graph_page') }}#interaction-view">Cell-cell Interaction</a>
+              </div>
+            </li>
+            <li class="dropdown">
+              <a href="{{ url_for('resources_page') }}" class="dropbtn">Resources ▾</a>
+              <div class="dropdown-content">
+                <a href="{{ url_for('resources_page') }}#methods">Methods</a>
+                <a href="{{ url_for('resources_page') }}#datasets">Curated Datasets</a>
+                <a href="{{ url_for('resources_page') }}#metadata">Data Download</a>
+              </div>
+            </li>
+            <li><a href="{{ url_for('contact_page') }}" class="active">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <main class="contact-layout">
+        <section class="panel contact-panel" aria-labelledby="contact-title">
+          <h1 id="contact-title">Contact Us</h1>
+          <p class="contact-intro">Send a question, correction, or suggestion to the atlas team.</p>
+          <form id="contact-form" class="contact-form">
+            <label>
+              Name
+              <input id="contact-name" name="name" autocomplete="name" maxlength="120" required />
+            </label>
+            <label>
+              Email
+              <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="254" required />
+            </label>
+            <label>
+              Message
+              <textarea id="contact-message" name="message" rows="8" maxlength="5000" required></textarea>
+            </label>
+            <div class="contact-actions">
+              <button id="contact-submit" type="submit">Send message</button>
+              <p id="contact-status" class="contact-status" aria-live="polite"></p>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+    <script src="{{ url_for('static', filename='contact.js') }}"></script>
+  </body>
+</html>
