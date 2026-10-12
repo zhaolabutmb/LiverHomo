@@ -72,22 +72,6 @@ class UsageRecorder:
         return calls
 
 
-def install_light_metadata():
-    """Replace the 2 GB metadata load with the few columns summarize_dataset() reads."""
-    from types import SimpleNamespace
-
-    import h5py
-    import pandas as pd
-    from anndata.io import read_elem
-
-    with h5py.File(webapp.METADATA_PATH, "r") as handle:
-        obs = handle["obs"]
-        columns = [name for name in ("diagnosis", "cell_type2", "dataset", "Type") if name in obs]
-        frame = pd.DataFrame({name: read_elem(obs[name]) for name in columns})
-    light = SimpleNamespace(obs=frame, n_obs=len(frame), n_vars=0, file=SimpleNamespace(close=lambda: None))
-    webapp.load_adata = lambda: light
-
-
 def score(case, answer, visualization):
     text = (answer or "").lower()
     failures = []
@@ -121,11 +105,7 @@ def main():
     parser.add_argument("--label", required=True)
     parser.add_argument("--max-tokens", type=int, default=400_000)
     parser.add_argument("--only", default="")
-    parser.add_argument("--light-metadata", action="store_true",
-                        help="Avoid loading the full metadata AnnData (needed on low-memory servers).")
     args = parser.parse_args()
-    if args.light_metadata:
-        install_light_metadata()
 
     cases = json.loads(CASES_PATH.read_text())
     if args.only:

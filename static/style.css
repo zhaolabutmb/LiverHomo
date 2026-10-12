@@ -75,8 +75,8 @@ textarea {
 }
 
 .brand-mark img {
-  width: 72px;
-  height: auto;
+  width: auto;
+  height: 56px;
   display: block;
   border-radius: 8px;
   background: transparent;
@@ -1221,14 +1221,26 @@ th.sortable:hover {
 
 .landing-footer {
   display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding-top: 14px;
-  color: var(--utmb-muted);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 28px;
+  padding: 24px 0 8px;
+}
+
+.landing-footer a {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.landing-footer img {
+  display: block;
+  height: 64px;
+  width: auto;
 }
 
 .node {
@@ -1360,7 +1372,7 @@ th.sortable:hover {
   }
 
   .brand-mark img {
-    width: 58px;
+    height: 44px;
   }
 
   .header-nav,
@@ -1599,8 +1611,11 @@ th.sortable:hover {
   }
 
   .landing-footer {
-    flex-direction: column;
-    gap: 8px;
+    gap: 14px;
+  }
+
+  .landing-footer img {
+    height: 44px;
   }
 
   .contact-panel {

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import h5py
 import numpy as np
+import pandas as pd
 from anndata.io import read_elem
 
 # Rows scanned per step when extracting one gene from a CSR matrix. Bounds
@@ -55,3 +56,17 @@ class ExpressionStore:
 
     def close(self):
         self.file.close()
+
+
+class MetadataStore:
+    """Selected observation columns of an AnnData file, read into memory once."""
+
+    def __init__(self, path: str, columns: tuple[str, ...]):
+        with h5py.File(path, "r") as handle:
+            obs = handle["obs"]
+            present = [name for name in dict.fromkeys(columns) if name in obs]
+            index = read_elem(obs[obs.attrs["_index"]])
+            self.obs = pd.DataFrame({name: read_elem(obs[name]) for name in present}, index=pd.Index(index))
+            self.total_obs_columns = len(obs.attrs.get("column-order", present))
+            self.n_vars = handle["var/_index"].shape[0] if "var/_index" in handle else 0
+        self.n_obs = len(self.obs)

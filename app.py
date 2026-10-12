@@ -12,7 +12,6 @@ from typing import Any
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
-import anndata as ad
 import matplotlib
 import networkx as nx
 import numpy as np
@@ -23,7 +22,7 @@ from flask import Flask, jsonify, render_template, request, send_file, url_for
 from openpyxl import load_workbook
 from assistant_data import DegIndex, NameResolver, load_composition, short_disease_name
 from env_config import load_env
-from expression_store import ExpressionStore
+from expression_store import ExpressionStore, MetadataStore
 from umap_config import UMAP_METADATA_COLUMNS, UMAP_STATIC_IMAGE_FILES
 
 matplotlib.use("Agg")
@@ -77,10 +76,15 @@ GENE_PLOT_MAX_PER_GROUP = 1_500
 GENE_PLOT_MAX_POINTS = 60_000
 
 
+# Only these observation columns are used by the summary and search endpoints.
+# Reading all 97 columns of the metadata file takes about 2 GB of RAM.
+METADATA_COLUMNS = ("diagnosis", "cell_type2", "dataset", "Type", *UMAP_METADATA_COLUMNS)
+
+
 def load_adata():
     global _adata
     if _adata is None:
-        _adata = ad.read_h5ad(METADATA_PATH, backed="r")
+        _adata = MetadataStore(METADATA_PATH, METADATA_COLUMNS)
     return _adata
 
 
@@ -111,7 +115,6 @@ def inject_filter_catalog():
 def unload_adata():
     global _adata, _gene_expression_adata
     if _adata is not None:
-        _adata.file.close()
         _adata = None
     if _gene_expression_adata is not None:
         _gene_expression_adata.close()
@@ -789,7 +792,7 @@ def summarize_dataset():
     summary = {
         "cells": int(adata.n_obs),
         "genes": int(load_gene_expression_adata().n_vars),
-        "obs_columns": len(adata.obs.columns),
+        "obs_columns": adata.total_obs_columns,
         "sample_columns": list(adata.obs.columns[:12]),
         "dataset_counts": {},
         "type_counts": {},
