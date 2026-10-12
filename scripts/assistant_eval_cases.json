@@ -1,0 +1,221 @@
+[
+  {
+    "id": "deg_direction",
+    "question": "Is SAA1 upregulated in HCC?",
+    "expect_all": [
+      "SAA1",
+      "down"
+    ],
+    "notes": "SAA1 is significantly DOWN in 14 HCC cell types"
+  },
+  {
+    "id": "deg_across_diseases",
+    "question": "In which diseases is SPP1 upregulated in macrophages?",
+    "expect_all": [
+      "MLN",
+      "PVTT",
+      "HCC"
+    ],
+    "notes": "Up in 9 groups: MLN, PVTT, HCC, ALD, iCCA, PBC, Adjacent Normal, PSC, Cirrhosis"
+  },
+  {
+    "id": "deg_top_genes",
+    "question": "What are the top 5 upregulated genes in hepatocytes in PBC?",
+    "expect_all": [
+      "PPDPF",
+      "GSN"
+    ],
+    "notes": "By p-value: PPDPF, MTRNR2L12, GSN, GABARAP, HSPA1A"
+  },
+  {
+    "id": "deg_which_cell_types",
+    "question": "Is GPC3 differentially expressed in HCC? In which cell types?",
+    "expect_all": [
+      "stellate"
+    ],
+    "notes": "Only Stellate_cell, up"
+  },
+  {
+    "id": "deg_specific",
+    "question": "Is COL1A1 increased in stellate cells in cirrhosis?",
+    "expect_any": [
+      "yes",
+      "up",
+      "increase"
+    ],
+    "expect_all": [
+      "COL1A1"
+    ],
+    "notes": "Up, de_coef 2.05"
+  },
+  {
+    "id": "deg_rare_hit",
+    "question": "Is MKI67 differentially expressed in iCCA?",
+    "expect_all": [
+      "cDC2"
+    ],
+    "notes": "Only cDC2, down"
+  },
+  {
+    "id": "deg_not_significant",
+    "question": "Is APOA1 differentially expressed in MASH?",
+    "expect_any": [
+      "not",
+      "no "
+    ],
+    "forbid": [
+      "upregulated in",
+      "downregulated in"
+    ],
+    "notes": "No significant DEG rows"
+  },
+  {
+    "id": "unknown_gene",
+    "question": "Is FAKEGENE1 changed in HCC?",
+    "expect_any": [
+      "not found",
+      "not available",
+      "no data",
+      "not present",
+      "no record",
+      "not in",
+      "could not",
+      "couldn't",
+      "no significant",
+      "not differentially",
+      "not listed",
+      "found",
+      "recognized",
+      "recognised"
+    ],
+    "notes": "Gene does not exist; must not invent results"
+  },
+  {
+    "id": "viz_gene",
+    "question": "Show ALB expression across cell types.",
+    "expect_viz": {
+      "title_startswith": "ALB "
+    },
+    "notes": "Must plot ALB, not PVALB"
+  },
+  {
+    "id": "viz_alias",
+    "question": "Show me the volcano plot for NASH.",
+    "expect_viz": {
+      "chart_type": "volcano",
+      "title_contains": "MASH"
+    },
+    "notes": "NASH is the former name of MASH"
+  },
+  {
+    "id": "composition",
+    "question": "How many hepatocytes are in the fetal samples?",
+    "expect_all": [
+      "38"
+    ],
+    "notes": "composition.json: Fetal Hepatocyte = 38"
+  },
+  {
+    "id": "diseases",
+    "question": "What diseases are included in the atlas?",
+    "expect_all": [
+      "HCC",
+      "PBC",
+      "PSC",
+      "MASH",
+      "Fetal"
+    ],
+    "notes": "11 disease groups plus Healthy"
+  },
+  {
+    "id": "viz_ppi",
+    "question": "Show the protein interaction network of ALB in HCC hepatocytes.",
+    "expect_viz": {
+      "chart_type": "ppi_network"
+    },
+    "notes": "ALB is in HCC_Hepatocyte network"
+  },
+  {
+    "id": "deg_down_list",
+    "question": "List genes downregulated in cholangiocytes in PSC.",
+    "expect_any": [
+      "RPS17",
+      "RPS10",
+      "HES1"
+    ],
+    "notes": "107 down genes; top: RPS17, RPS10, HES1"
+  },
+  {
+    "id": "explain_column",
+    "question": "What does de_coef mean in the DEG table?",
+    "expect_any": [
+      "fold",
+      "effect",
+      "coefficient",
+      "log"
+    ],
+    "notes": "General explanation"
+  },
+  {
+    "id": "deg_alias_celltype",
+    "question": "In ALD, is ALB higher in hepatocytes?",
+    "expect_any": [
+      "up",
+      "higher",
+      "increase",
+      "yes"
+    ],
+    "expect_all": [
+      "ALB"
+    ],
+    "notes": "ALD Hepatocyte up, de_coef 0.37"
+  },
+  {
+    "id": "follow_up",
+    "history": [
+      {
+        "role": "user",
+        "content": "Is SPP1 upregulated in HCC macrophages?"
+      },
+      {
+        "role": "assistant",
+        "content": "Yes. SPP1 is significantly upregulated in HCC macrophages (de_coef 4.02, p = 8.7e-32)."
+      }
+    ],
+    "question": "What about in PBC?",
+    "expect_all": [
+      "PBC"
+    ],
+    "expect_any": [
+      "up",
+      "yes",
+      "increase"
+    ],
+    "notes": "PBC Macrophage up, de_coef 2.64"
+  },
+  {
+    "id": "gene_function",
+    "question": "what is function of SPP1",
+    "expect_all": [
+      "background",
+      "macrophage"
+    ],
+    "notes": "Labelled background plus atlas DEG summary"
+  },
+  {
+    "id": "out_of_scope_treatment",
+    "question": "What is the best treatment for HCC?",
+    "expect_all": [
+      "This question is beyond the knowledge scope of LiverHomo."
+    ],
+    "notes": "No medical advice"
+  },
+  {
+    "id": "out_of_scope_other",
+    "question": "What is the weather in Galveston today?",
+    "expect_all": [
+      "This question is beyond the knowledge scope of LiverHomo."
+    ],
+    "notes": "Off-topic"
+  }
+]

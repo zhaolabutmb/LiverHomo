@@ -21,7 +21,9 @@ import seaborn as sns
 import tiktoken
 from flask import Flask, jsonify, render_template, request, send_file, url_for
 from openpyxl import load_workbook
+from assistant_data import DegIndex, NameResolver, load_composition, short_disease_name
 from env_config import load_env
+from expression_store import ExpressionStore
 from umap_config import UMAP_METADATA_COLUMNS, UMAP_STATIC_IMAGE_FILES
 
 matplotlib.use("Agg")
@@ -90,7 +92,7 @@ def load_gene_expression_adata():
                 f"Condensed gene-expression AnnData not found at {GENE_EXPRESSION_DATA_PATH}. "
                 "Generate it with scripts/generate_gene_expression_adata.py."
             )
-        _gene_expression_adata = ad.read_h5ad(GENE_EXPRESSION_DATA_PATH, backed="r")
+        _gene_expression_adata = ExpressionStore(GENE_EXPRESSION_DATA_PATH)
     return _gene_expression_adata
 
 
@@ -112,7 +114,7 @@ def unload_adata():
         _adata.file.close()
         _adata = None
     if _gene_expression_adata is not None:
-        _gene_expression_adata.file.close()
+        _gene_expression_adata.close()
         _gene_expression_adata = None
     with BACKGROUND_DATA_LOCK:
         BACKGROUND_DATA["summary"] = None
@@ -316,7 +318,11 @@ def load_cell_interaction_matrix(disease: str) -> pd.DataFrame | None:
     path = os.path.join(CELL_INTERACTION_ROOT, f"{safe_name}{CELL_INTERACTION_COUNTS_SUFFIX}")
     if not os.path.isfile(path):
         return None
-    return pd.read_csv(path, index_col=0)
+    matrix = pd.read_csv(path, index_col=0)
+    # The CSVs write "Circulating_NK/NKT"; the rest of the atlas uses "Circulating_NK_NKT".
+    matrix.index = matrix.index.str.replace("/", "_", regex=False)
+    matrix.columns = matrix.columns.str.replace("/", "_", regex=False)
+    return matrix
 
 
 def get_cell_interaction_cell_types() -> list[str]:
@@ -884,42 +890,42 @@ def search_rows(
     return subset.to_dict(orient="records")
 
 
-def _resolve_gene_index(adata: ad.AnnData, gene_query: str) -> tuple[int, str, str]:
+def _gene_lookup(adata: ExpressionStore) -> dict[str, tuple[int, str, str]]:
+    # Upper-cased gene ID or symbol -> (index, display name, matrix). Main
+    # (lognorm) genes win over raw-only genes; IDs win over gene_name symbols.
+    lookup = getattr(adata, "_gene_lookup", None)
+    if lookup is not None:
+        return lookup
+    lookup = {}
+    sources = []
+    if adata.raw is not None:
+        raw_names = pd.Index(adata.raw.var_names).astype(str)
+        if "gene_name" in adata.raw.var.columns:
+            sources.append(("raw", raw_names, normalize_series(adata.raw.var["gene_name"])))
+        sources.append(("raw", raw_names, raw_names))
+    var_names = pd.Index(adata.var_names).astype(str)
+    if "gene_name" in adata.var.columns:
+        sources.append(("main", var_names, normalize_series(adata.var["gene_name"])))
+    sources.append(("main", var_names, var_names))
+    for source, names, keys in sources:  # later sources overwrite earlier ones
+        for idx, key in enumerate(keys):
+            lookup[str(key).upper()] = (idx, str(names[idx]), source)
+    adata._gene_lookup = lookup
+    return lookup
+
+
+def _resolve_gene_index(adata: ExpressionStore, gene_query: str) -> tuple[int, str, str]:
     gene_query = (gene_query or "").strip()
     if not gene_query:
         raise ValueError("A gene name is required")
-
-    var_names = pd.Index(adata.var_names).astype(str)
-    for idx, name in enumerate(var_names):
-        if name.lower() == gene_query.lower():
-            return idx, str(name), "main"
-        if gene_query.lower() in name.lower():
-            return idx, str(name), "main"
-    if "gene_name" in adata.var.columns:
-        gene_series = normalize_series(adata.var["gene_name"])
-        for idx, name in enumerate(gene_series):
-            if name.lower() == gene_query.lower():
-                return idx, str(var_names[idx]), "main"
-            if gene_query.lower() in name.lower():
-                return idx, str(var_names[idx]), "main"
-
-    if adata.raw is not None:
-        raw_names = pd.Index(adata.raw.var_names).astype(str)
-        for idx, name in enumerate(raw_names):
-            if name.lower() == gene_query.lower():
-                return idx, str(name), "raw"
-            if gene_query.lower() in name.lower():
-                return idx, str(name), "raw"
-
-        if "gene_name" in adata.raw.var.columns:
-            gene_series = normalize_series(adata.raw.var["gene_name"])
-            for idx, name in enumerate(gene_series):
-                if name.lower() == gene_query.lower():
-                    return idx, str(raw_names[idx]), "raw"
-                if gene_query.lower() in name.lower():
-                    return idx, str(raw_names[idx]), "raw"
-
-    raise KeyError(f"Gene {gene_query} was not found")
+    lookup = _gene_lookup(adata)
+    match = lookup.get(gene_query.upper())
+    if match is not None:
+        return match
+    query = gene_query.upper()
+    suggestions = sorted({lookup[key][1] for key in lookup if key.startswith(query)})[:8]
+    hint = f" Did you mean: {', '.join(suggestions)}?" if suggestions else ""
+    raise KeyError(f"Gene {gene_query} was not found.{hint}")
 
 
 def _normalized_obs_column(column: str) -> np.ndarray:
@@ -935,6 +941,17 @@ def _normalized_obs_column(column: str) -> np.ndarray:
     return values
 
 
+def _lowercase_obs_column(column: str) -> np.ndarray:
+    key = f"{column}:lower"
+    with OBS_COLUMN_CACHE_LOCK:
+        cached = OBS_COLUMN_CACHE.get(key)
+    if cached is None:
+        cached = pd.Series(_normalized_obs_column(column)).str.lower().to_numpy()
+        with OBS_COLUMN_CACHE_LOCK:
+            OBS_COLUMN_CACHE[key] = cached
+    return cached
+
+
 def _gene_vector_cache_path(cache_key: str) -> str:
     stat = os.stat(GENE_EXPRESSION_DATA_PATH)
     # Tie the cache to the source file so a regenerated h5ad invalidates it.
@@ -944,11 +961,9 @@ def _gene_vector_cache_path(cache_key: str) -> str:
     return os.path.join(directory, f"{cache_key}.npy")
 
 
-def _raw_gene_expression_vector(adata: ad.AnnData, gene_idx: int) -> np.ndarray:
-    # AnnData-backed CSR column slicing scans every row.
-    column = adata.raw.X[:, gene_idx]
-    counts = np.asarray(column.todense()).ravel() if hasattr(column, "todense") else np.asarray(column).ravel()
-    counts = counts.astype(np.float64)
+def _raw_gene_expression_vector(adata: ExpressionStore, gene_idx: int) -> np.ndarray:
+    # Scans the whole raw CSR matrix (~30 s); results are cached on disk.
+    counts = adata.column("raw/X", gene_idx).astype(np.float64)
 
     if "total_counts" in adata.obs.columns:
         totals = adata.obs["total_counts"].to_numpy(dtype=np.float64)
@@ -960,7 +975,7 @@ def _raw_gene_expression_vector(adata: ad.AnnData, gene_idx: int) -> np.ndarray:
     return np.log1p(counts)
 
 
-def _gene_expression_vector(adata: ad.AnnData, gene_idx: int, source: str = "main") -> np.ndarray:
+def _gene_expression_vector(adata: ExpressionStore, gene_idx: int, source: str = "main") -> np.ndarray:
     cache_key = f"{source}_{gene_idx}"
     with GENE_VECTOR_CACHE_LOCK:
         cached = GENE_VECTOR_CACHE.get(cache_key)
@@ -979,9 +994,7 @@ def _gene_expression_vector(adata: ad.AnnData, gene_idx: int, source: str = "mai
         if source == "raw":
             values = _raw_gene_expression_vector(adata, gene_idx)
         else:
-            column = adata[:, gene_idx]
-            expr = column.layers["lognorm"] if "lognorm" in column.layers else column.X
-            values = np.asarray(expr.toarray()).ravel() if hasattr(expr, "toarray") else np.asarray(expr).ravel()
+            values = adata.column(adata.main_matrix, gene_idx)
         values = np.nan_to_num(values.astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0)
         temp_path = f"{cache_path}.{os.getpid()}.tmp.npy"
         try:
@@ -1005,19 +1018,17 @@ def _selection_mask(n_obs: int, cell_type: str | None = None, disease: str | Non
     selected_diseases = _parse_multi_select_values(disease)
 
     if selected_cell_types and "cell_type2" in adata.obs.columns:
-        values = _normalized_obs_column("cell_type2")
         allowed = {value.strip().lower() for value in selected_cell_types}
-        mask &= np.isin(np.char.lower(values.astype(str)), list(allowed))
+        mask &= np.isin(_lowercase_obs_column("cell_type2"), list(allowed))
 
     if selected_diseases and "diagnosis" in adata.obs.columns:
-        values = _normalized_obs_column("diagnosis")
         allowed = {value.strip().lower() for value in selected_diseases}
-        mask &= np.isin(np.char.lower(values.astype(str)), list(allowed))
+        mask &= np.isin(_lowercase_obs_column("diagnosis"), list(allowed))
 
     return mask
 
 
-def _dataframe_for_gene_expression(adata: ad.AnnData, gene_idx: int, cell_type: str | None = None, disease: str | None = None, source: str = "main") -> pd.DataFrame:
+def _dataframe_for_gene_expression(adata: ExpressionStore, gene_idx: int, cell_type: str | None = None, disease: str | None = None, source: str = "main") -> pd.DataFrame:
     mask = _selection_mask(adata.n_obs, cell_type=cell_type, disease=disease)
     values = _gene_expression_vector(adata, gene_idx, source=source)[mask]
 
@@ -1217,118 +1228,238 @@ def parse_query(query: str):
     return {"action": "summary"}
 
 
-ASSISTANT_FALLBACK = "I do not know"
+ASSISTANT_MODEL = os.environ.get("ASSISTANT_MODEL", "gpt-5.4-nano")
+ASSISTANT_OUT_OF_SCOPE = "This question is beyond the knowledge scope of LiverHomo."
 ASSISTANT_MAX_INPUT_TOKENS = 1000
-ASSISTANT_MAX_OUTPUT_TOKENS = 500
+ASSISTANT_MAX_OUTPUT_TOKENS = 2500
+ASSISTANT_MAX_ROUNDS = 5
+ASSISTANT_HISTORY_MESSAGES = 6
+ASSISTANT_HISTORY_MESSAGE_CHARS = 1500
+ASSISTANT_TOOL_RESULT_CHARS = 12_000
+COMPOSITION_PATH = os.path.join(app.root_path, "static", "composition.json")
+DEG_INDEX = DegIndex(DEG_ROOT)
+_NAME_RESOLVER: NameResolver | None = None
+
+_DISEASE_ARG = {"type": "string", "description": "Disease in the user's own words, e.g. 'HCC', 'NASH', 'primary biliary cholangitis'. Comma-separate several."}
+_CELL_TYPE_ARG = {"type": "string", "description": "Cell type in the user's own words, e.g. 'hepatocytes', 'Kupffer cells', 'CD8 T cells'. Groups such as 'T cells' expand to all subsets. Comma-separate several."}
+_GENE_ARG = {"type": "string", "description": "Official gene symbol, e.g. 'SPP1'."}
+
+
+def _assistant_tool(name: str, description: str, properties: dict[str, Any], required: list[str]) -> dict[str, Any]:
+    return {
+        "type": "function",
+        "function": {
+            "name": name,
+            "description": description,
+            "parameters": {"type": "object", "properties": properties, "required": required, "additionalProperties": False},
+        },
+    }
+
+
 ASSISTANT_TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_website_data",
-            "description": "Retrieve facts from the LiverHomo/DCP website backend. Use this before answering every question.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "source": {
-                        "type": "string",
-                        "enum": ["atlas_summary", "deg_catalog", "deg_table", "graph_catalog"],
-                        "description": "The website backend data source needed to answer the question.",
-                    },
-                    "disease": {"type": "string"},
-                    "cell_type": {"type": "string"},
-                    "regulation": {"type": "string", "enum": ["", "up", "down"]},
-                    "limit": {"type": "integer", "minimum": 1, "maximum": 25},
-                },
-                "required": ["source"],
-                "additionalProperties": False,
-            },
+    _assistant_tool(
+        "search_gene_deg",
+        "Differential expression results for ONE gene: every disease and cell type where it is significantly up "
+        "or down, with effect size (de_coef) and p-value, plus combinations that were tested but not significant. "
+        "Use for 'Is gene X changed/up/down in ...?' and 'Where is gene X differentially expressed?'.",
+        {"gene": _GENE_ARG, "disease": _DISEASE_ARG, "cell_type": _CELL_TYPE_ARG},
+        ["gene"],
+    ),
+    _assistant_tool(
+        "top_deg_genes",
+        "Ranked list of significant differentially expressed genes for a disease, optionally restricted to cell "
+        "types and direction. Use for 'top genes', 'list genes up/down in ...'.",
+        {
+            "disease": _DISEASE_ARG,
+            "cell_type": _CELL_TYPE_ARG,
+            "direction": {"type": "string", "enum": ["up", "down", "both"]},
+            "sort_by": {"type": "string", "enum": ["pvalue", "effect"], "description": "pvalue (default) or absolute de_coef."},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 30},
         },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "generate_visualization",
-            "description": (
-                "Generate a chart image using the same figure types shown on the website: gene expression "
-                "histograms, gene violin plots, pre-generated UMAP images colored by supported metadata columns, volcano "
-                "plots, cell-cell interaction heatmaps, cell-cell interaction pair histograms, and "
-                "protein-protein interaction (PPI) networks for a gene within a disease and cell type context. "
-                "Call this whenever the user asks to see, plot, chart, or visualize data."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "chart_type": {
-                        "type": "string",
-                        "enum": [
-                            "gene_expression_histogram",
-                            "gene_violin",
-                            "umap_metadata",
-                            "volcano",
-                            "cell_interaction_heatmap",
-                            "cell_interaction_pair_histogram",
-                            "ppi_network",
-                        ],
-                        "description": "The type of figure to generate.",
-                    },
-                    "gene": {"type": "string", "description": "Gene symbol. Required for gene_expression_histogram, gene_violin, and ppi_network (the seed gene)."},
-                    "cell_type": {"type": "string", "description": "Cell type filter (comma-separated for multiple). Required for ppi_network, optional for gene charts."},
-                    "disease": {"type": "string", "description": "Disease/diagnosis filter (comma-separated for multiple). Required for volcano, cell_interaction_heatmap, and ppi_network."},
-                    "column": {"type": "string", "description": "Supported pre-generated UMAP metadata column. Required for umap_metadata; UMAP images cannot be filtered by disease or cell type."},
-                    "cell_type_a": {"type": "string", "description": "First cell type. Required for cell_interaction_pair_histogram."},
-                    "cell_type_b": {"type": "string", "description": "Second cell type. Required for cell_interaction_pair_histogram."},
-                    "layout": {
-                        "type": "string",
-                        "enum": ["spring", "kamada_kawai", "random"],
-                        "description": "Network layout algorithm for ppi_network. Defaults to kamada_kawai.",
-                    },
-                },
-                "required": ["chart_type"],
-                "additionalProperties": False,
-            },
+        ["disease"],
+    ),
+    _assistant_tool(
+        "gene_expression_summary",
+        "Expression level of one gene per disease and cell type: percent of cells expressing it and mean "
+        "log-normalized expression. Use for 'Is gene X expressed in ...?' or 'Which cells express gene X?'. "
+        "The first request for a gene can take up to a minute.",
+        {"gene": _GENE_ARG, "disease": _DISEASE_ARG, "cell_type": _CELL_TYPE_ARG},
+        ["gene"],
+    ),
+    _assistant_tool(
+        "cell_counts",
+        "Number of cells per disease and cell type in the atlas.",
+        {"disease": _DISEASE_ARG, "cell_type": _CELL_TYPE_ARG},
+        [],
+    ),
+    _assistant_tool(
+        "atlas_overview",
+        "Diseases (with full names), cell types, total cells and genes, and which analyses are available.",
+        {},
+        [],
+    ),
+    _assistant_tool(
+        "generate_visualization",
+        "Show a figure to the user. gene_violin: expression of a gene by cell type (optionally filtered). "
+        "gene_expression_histogram: distribution of a gene's expression. volcano: DEG volcano plot for a disease. "
+        "umap_metadata: whole-atlas UMAP coloured by a metadata column (cannot be filtered). "
+        "cell_interaction_heatmap: cell-cell interaction counts for a disease. "
+        "cell_interaction_pair_histogram: interactions between two cell types across diseases. "
+        "ppi_network: protein-protein interaction neighbourhood of a gene in one disease and cell type.",
+        {
+            "chart_type": {"type": "string", "enum": [
+                "gene_violin", "gene_expression_histogram", "volcano", "umap_metadata",
+                "cell_interaction_heatmap", "cell_interaction_pair_histogram", "ppi_network",
+            ]},
+            "gene": _GENE_ARG,
+            "disease": _DISEASE_ARG,
+            "cell_type": _CELL_TYPE_ARG,
+            "column": {"type": "string", "enum": list(UMAP_METADATA_COLUMNS)},
+            "cell_type_a": {"type": "string"},
+            "cell_type_b": {"type": "string"},
         },
-    },
+        ["chart_type"],
+    ),
 ]
-ASSISTANT_SYSTEM_PROMPT = (
-    "You are the LiverHomo/DCP Atlas assistant. You may only answer with facts returned by the "
-    "get_website_data tool, and only produce charts via the generate_visualization tool, during this "
-    "conversation. Never use general knowledge, infer missing facts, or answer based on the user's wording. "
-    "Call a tool before every answer. Apply the same disease, cell type, gene, and regulation filters the "
-    "user asks for by passing them as tool arguments, exactly like the website's own filter controls, except "
-    "that pre-generated UMAP images always show all cells and cannot be filtered. Do not present a global UMAP "
-    "as filtered; explain that filtered UMAPs are unavailable. Disease "
-    "and cell type names must match the website's catalog spelling (case-insensitive); if you are not sure of "
-    "the exact spelling, or generate_visualization returns an error, call get_website_data with "
-    "source=graph_catalog or source=deg_catalog first to confirm the exact names, then retry "
-    "generate_visualization with the corrected arguments before giving up. If the user asks to see, plot, "
-    "chart, or visualize data — including a protein-protein interaction network for a gene within a disease "
-    "and cell type — call generate_visualization with the appropriate chart_type and parameters, then briefly "
-    "describe the chart in your reply without repeating raw pixel data. Only reply with exactly 'I do not "
-    "know' if every reasonable tool attempt has failed."
-)
+
+ASSISTANT_SYSTEM_PROMPT = """You are the assistant of LiverHomo, a single-cell RNA-seq atlas of the human liver \
+(about 1.16 million cells, 26 cell types, 11 disease groups plus Healthy). Users are biologists and clinicians who \
+mostly ask whether their genes of interest are changed or expressed in particular diseases and cell types.
+
+Rules:
+1. Every statement about atlas data (DEG results, expression, cell counts, figures) must come from a tool result in \
+this conversation. Never invent genes, numbers or results. Call the tools you need before answering.
+2. Pass diseases and cell types in the user's own words; the tools understand synonyms (NASH -> MASH, Kupffer cells \
+-> Macrophage, T cells -> all T-cell subsets). If a tool returns an error listing valid names, retry with a valid \
+name or ask the user to choose.
+3. DEG results contain only significant genes. If a gene was tested in a disease/cell type but is absent, say it is \
+not significantly changed there. If that combination was not analysed, say so. Every disease group is compared with \
+Healthy (Healthy itself has no DEG results). "up"/"down" and a positive/negative de_coef mean higher/lower in the \
+disease than in Healthy; de_coef is a log-scale effect size and de_pval the p-value.
+4. You may add one or two sentences of general biological background (for example what a gene encodes) when it \
+helps. Such sentences MUST start with the exact label "Background (general knowledge):", for example \
+"Background (general knowledge): SPP1 encodes osteopontin." Never present general knowledge as atlas data. When asked what \
+a gene does or what its function is, call search_gene_deg and answer in exactly this shape:
+   Background (general knowledge): <one or two sentences on what the gene encodes and does>
+   In LiverHomo: <where it is significantly up/down, with the strongest examples and totals>
+5. Answer directly first (yes/no or the list), then the key numbers: cell type, direction, de_coef, p-value. Use \
+the atlas names for diseases and cell types. For long results show the most significant ones and give the total.
+6. When the user asks to see, show, plot or visualize something, call generate_visualization and describe the \
+figure briefly.
+7. No tables or headings; **bold** only for the direct answer or gene names. Keep answers under 200 words unless the user asks for more.
+8. If the question is not about LiverHomo data or the biology of the genes, cell types and diseases in it (for \
+example treatment, diagnosis or other medical advice, news, weather, programming), reply with exactly this \
+sentence and nothing else: """ + ASSISTANT_OUT_OF_SCOPE
 
 
-def get_assistant_data(arguments: dict[str, Any]) -> dict[str, Any] | None:
-    source = arguments.get("source")
-    disease = str(arguments.get("disease") or "").strip() or None
-    cell_type = str(arguments.get("cell_type") or "").strip() or None
-    regulation = str(arguments.get("regulation") or "").strip() or None
-    limit = min(max(int(arguments.get("limit") or 10), 1), 25)
+def get_name_resolver() -> NameResolver:
+    global _NAME_RESOLVER
+    if _NAME_RESOLVER is None:
+        composition = load_composition(COMPOSITION_PATH)
+        diseases = {short_disease_name(name): name for name in composition}
+        cell_types = sorted({cell_type for counts in composition.values() for cell_type in counts})
+        _NAME_RESOLVER = NameResolver(diseases, cell_types)
+    return _NAME_RESOLVER
 
-    if source == "atlas_summary":
-        return summarize_dataset()
-    if source == "deg_catalog":
-        return get_deg_summary()
-    if source == "deg_table":
-        return get_deg_table(disease=disease, cell_type=cell_type, regulation=regulation, limit=limit)
-    if source == "graph_catalog":
-        catalog = get_graph_catalog()
-        if disease:
-            catalog = [item for item in catalog if item["disease"].lower() == disease.lower()]
-        if cell_type:
-            catalog = [item for item in catalog if item["cell_type"].lower() == cell_type.lower()]
-        return {"count": len(catalog), "graphs": catalog[:limit]}
-    return None
+
+def _resolve_diseases(text: str | None) -> list[str]:
+    resolver = get_name_resolver()
+    return [resolver.disease(part) for part in re.split(r",|;", text or "") if part.strip()]
+
+
+def _gene_expression_summary(gene: str, diseases: list[str], cell_types: list[str]) -> dict[str, Any]:
+    adata = load_gene_expression_adata()
+    gene_idx, symbol, source = _resolve_gene_index(adata, gene)
+    frame = _dataframe_for_gene_expression(
+        adata, gene_idx, cell_type=",".join(cell_types) or None, disease=",".join(diseases) or None, source=source,
+    )
+    if frame.empty:
+        return {"gene": symbol, "groups": [], "note": "No cells match that selection."}
+    frame["expressing"] = frame["expression"] > 0
+    grouped = frame.groupby(["diagnosis", "cell_type"], observed=True).agg(
+        cells=("expression", "size"), pct_expressing=("expressing", "mean"), mean_expression=("expression", "mean"),
+    ).reset_index()
+    grouped = grouped[grouped["cells"] >= 20].sort_values("mean_expression", ascending=False)
+    groups = [
+        {
+            "disease": row.diagnosis, "cell_type": row.cell_type, "cells": int(row.cells),
+            "pct_expressing": round(100 * float(row.pct_expressing), 1), "mean_expression": round(float(row.mean_expression), 3),
+        }
+        for row in grouped.head(30).itertuples(index=False)
+    ]
+    return {
+        "gene": symbol,
+        "values": "log-normalized expression; groups with fewer than 20 cells omitted; sorted by mean expression",
+        "groups_total": int(len(grouped)),
+        "groups": groups,
+    }
+
+
+def _cell_counts(diseases: list[str], cell_types: list[str]) -> dict[str, Any]:
+    composition = load_composition(COMPOSITION_PATH)
+    rows = []
+    for full_name, counts in composition.items():
+        disease = short_disease_name(full_name)
+        if diseases and disease not in diseases:
+            continue
+        for cell_type, count in counts.items():
+            if cell_types and cell_type not in cell_types:
+                continue
+            rows.append({"disease": disease, "cell_type": cell_type, "cells": int(count)})
+    rows.sort(key=lambda row: -row["cells"])
+    return {"total_cells": sum(row["cells"] for row in rows), "rows": rows[:60], "rows_total": len(rows)}
+
+
+def _atlas_overview() -> dict[str, Any]:
+    resolver = get_name_resolver()
+    composition = load_composition(COMPOSITION_PATH)
+    deg_diseases = sorted({disease for disease, _ in DEG_INDEX.tested})
+    adata = load_gene_expression_adata()
+    return {
+        "total_cells": sum(sum(counts.values()) for counts in composition.values()),
+        "diseases": [
+            {"name": short, "full_name": full, "cells": sum(composition[full].values()), "has_deg_results": short in deg_diseases}
+            for short, full in resolver.diseases.items()
+        ],
+        "cell_types": resolver.cell_types,
+        "genes_with_expression_data": int(adata.raw.var_names.size if adata.raw is not None else adata.n_vars),
+        "available": [
+            "differential expression (DEG) per disease and cell type",
+            "gene expression by disease and cell type",
+            "cell counts", "volcano plots", "UMAP images", "cell-cell interaction counts",
+            "protein-protein interaction networks per disease and cell type",
+        ],
+    }
+
+
+def get_assistant_data(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run a data tool. Raises LookupError/KeyError/ValueError with a message the model can act on."""
+    resolver = get_name_resolver()
+    diseases = _resolve_diseases(arguments.get("disease"))
+    cell_types = resolver.cell_types_for(arguments.get("cell_type"))
+    gene = str(arguments.get("gene") or "").strip()
+
+    if name == "search_gene_deg":
+        if not gene:
+            raise ValueError("gene is required")
+        _resolve_gene_index(load_gene_expression_adata(), gene)  # rejects unknown genes with suggestions
+        return DEG_INDEX.gene(gene, diseases, cell_types)
+    if name == "top_deg_genes":
+        if len(diseases) != 1:
+            raise ValueError("Exactly one disease is required for top_deg_genes.")
+        direction = arguments.get("direction") if arguments.get("direction") in ("up", "down") else None
+        limit = min(max(int(arguments.get("limit") or 10), 1), 30)
+        sort = "effect" if arguments.get("sort_by") == "effect" else "pvalue"
+        return DEG_INDEX.top(diseases[0], cell_types, direction, limit, sort)
+    if name == "gene_expression_summary":
+        if not gene:
+            raise ValueError("gene is required")
+        return _gene_expression_summary(gene, diseases, cell_types)
+    if name == "cell_counts":
+        return _cell_counts(diseases, cell_types)
+    if name == "atlas_overview":
+        return _atlas_overview()
+    raise ValueError(f"Unknown tool {name}")
 
 
 def _encode_image_file_png(path: str) -> str:
@@ -1383,59 +1514,59 @@ def _assistant_visualization_result(chart_type: str, title: str, image_base64: s
     }
 
 
-def get_assistant_visualization(arguments: dict[str, Any]) -> dict[str, Any] | None:
+def get_assistant_visualization(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a chart. Raises LookupError/KeyError/ValueError with a message the model can act on."""
+    resolver = get_name_resolver()
     chart_type = str(arguments.get("chart_type") or "").strip()
-    gene = str(arguments.get("gene") or "").strip() or None
-    cell_type = str(arguments.get("cell_type") or "").strip() or None
-    disease = str(arguments.get("disease") or "").strip() or None
-    column = str(arguments.get("column") or "").strip() or None
-    cell_type_a = str(arguments.get("cell_type_a") or "").strip() or None
-    cell_type_b = str(arguments.get("cell_type_b") or "").strip() or None
-    layout = str(arguments.get("layout") or "kamada_kawai").strip() or "kamada_kawai"
-    if layout not in GRAPH_LAYOUTS:
-        layout = "kamada_kawai"
+    gene = str(arguments.get("gene") or "").strip()
+    diseases = _resolve_diseases(arguments.get("disease"))
+    cell_types = resolver.cell_types_for(arguments.get("cell_type"))
+    disease_arg = ",".join(diseases) or None
+    cell_type_arg = ",".join(cell_types) or None
 
-    try:
-        if chart_type == "gene_expression_histogram" and gene:
-            payload = get_gene_expression(gene, cell_type=cell_type, disease=disease, plot_type="histogram")
-            return _assistant_visualization_result(chart_type, f"{payload['gene']} expression distribution", payload["image_base64"])
-        if chart_type == "gene_violin" and gene:
-            payload = get_gene_violin(gene, cell_types=cell_type, disease=disease)
-            return _assistant_visualization_result(chart_type, f"{payload['gene']} expression by cell type", payload["image_base64"])
-        if chart_type == "umap_metadata" and column:
-            if cell_type or disease:
-                return None
-            image_path = get_static_umap_image_path(column)
-            if image_path is None or not os.path.isfile(image_path):
-                return None
-            image = _encode_image_file_png(image_path)
-            return _assistant_visualization_result(chart_type, f"UMAP colored by {column}", image)
-        if chart_type == "volcano" and disease:
-            path = get_volcano_path(disease)
-            if path is None:
-                return None
-            return _assistant_visualization_result(chart_type, f"Volcano plot: {disease}", _encode_image_file_png(path))
-        if chart_type == "cell_interaction_heatmap" and disease:
-            path = get_cell_interaction_path(disease, kind="heatmap")
-            if path is None:
-                return None
-            return _assistant_visualization_result(chart_type, f"Cell-cell interaction heatmap: {disease}", _encode_image_file_png(path))
-        if chart_type == "cell_interaction_pair_histogram" and cell_type_a and cell_type_b:
-            payload = get_cell_interaction_pair_counts(cell_type_a, cell_type_b)
-            return _assistant_visualization_result(chart_type, f"{cell_type_a} \u2194 {cell_type_b} interactions by disease", payload["image_base64"])
-        if chart_type == "ppi_network" and gene and disease and cell_type:
-            graph_payload = get_graph_payload(disease=disease, cell_type=cell_type, limit=1, gene_list=gene, max_edges=GRAPH_LAYOUT_EDGE_LIMIT)
-            graphs = graph_payload.get("graphs") or []
-            if not graphs or not graphs[0].get("nodes"):
-                return None
-            network = build_graph_network({"nodes": graphs[0]["nodes"], "edges": graphs[0]["edges"]}, layout=layout)
-            if not network.get("nodes"):
-                return None
-            title = f"{gene} PPI network \u2014 {disease} / {cell_type}"
-            return _assistant_visualization_result(chart_type, title, _render_network_png(network["nodes"], network["edges"], title))
-    except (FileNotFoundError, KeyError, ValueError):
-        return None
-    return None
+    if chart_type in ("gene_expression_histogram", "gene_violin", "ppi_network") and not gene:
+        raise ValueError(f"gene is required for {chart_type}")
+    if chart_type == "gene_expression_histogram":
+        payload = get_gene_expression(gene, cell_type=cell_type_arg, disease=disease_arg, plot_type="histogram")
+        return _assistant_visualization_result(chart_type, f"{payload['gene']} expression distribution", payload["image_base64"])
+    if chart_type == "gene_violin":
+        payload = get_gene_violin(gene, cell_types=cell_type_arg, disease=disease_arg)
+        return _assistant_visualization_result(chart_type, f"{payload['gene']} expression by cell type", payload["image_base64"])
+    if chart_type == "umap_metadata":
+        column = str(arguments.get("column") or "").strip()
+        image_path = get_static_umap_image_path(column)
+        if image_path is None or not os.path.isfile(image_path):
+            raise ValueError(f"No UMAP image for column '{column}'. Available: {', '.join(get_static_umap_metadata_columns())}")
+        return _assistant_visualization_result(chart_type, f"UMAP colored by {column}", _encode_image_file_png(image_path))
+    if chart_type in ("volcano", "cell_interaction_heatmap"):
+        if len(diseases) != 1:
+            raise ValueError(f"Exactly one disease is required for {chart_type}.")
+        if chart_type == "volcano":
+            path, title = get_volcano_path(diseases[0]), f"Volcano plot: {diseases[0]}"
+        else:
+            path, title = get_cell_interaction_path(diseases[0], kind="heatmap"), f"Cell-cell interaction heatmap: {diseases[0]}"
+        if path is None:
+            raise LookupError(f"No {chart_type} figure exists for {diseases[0]}.")
+        return _assistant_visualization_result(chart_type, title, _encode_image_file_png(path))
+    if chart_type == "cell_interaction_pair_histogram":
+        pair = [resolver.cell_types_for(arguments.get(key)) for key in ("cell_type_a", "cell_type_b")]
+        if any(len(names) != 1 for names in pair):
+            raise ValueError("cell_type_a and cell_type_b must each name exactly one cell type.")
+        payload = get_cell_interaction_pair_counts(pair[0][0], pair[1][0])
+        if not payload["rows"]:
+            raise LookupError("No interaction counts found for that pair.")
+        return _assistant_visualization_result(chart_type, f"{pair[0][0]} ↔ {pair[1][0]} interactions by disease", payload["image_base64"])
+    if chart_type == "ppi_network":
+        if len(diseases) != 1 or len(cell_types) != 1:
+            raise ValueError("ppi_network needs exactly one disease and one cell type.")
+        graph_payload = get_graph_payload(disease=diseases[0], cell_type=cell_types[0], limit=1, gene_list=gene, max_edges=GRAPH_LAYOUT_EDGE_LIMIT)
+        graphs = graph_payload.get("graphs") or []
+        if not graphs or not graphs[0].get("nodes"):
+            raise LookupError(f"{gene} is not in the {diseases[0]} / {cell_types[0]} interaction network.")
+        network = build_graph_network({"nodes": graphs[0]["nodes"], "edges": graphs[0]["edges"]}, layout="kamada_kawai")
+        title = f"{gene} PPI network — {diseases[0]} / {cell_types[0]}"
+        return _assistant_visualization_result(chart_type, title, _render_network_png(network["nodes"], network["edges"], title))
+    raise ValueError(f"Unknown chart_type '{chart_type}'")
 
 
 def limit_assistant_input(query: str) -> str:
@@ -1444,29 +1575,60 @@ def limit_assistant_input(query: str) -> str:
     return encoding.decode(tokens[:ASSISTANT_MAX_INPUT_TOKENS])
 
 
-def call_openai(query: str):
+def _assistant_history(history: Any) -> list[dict[str, str]]:
+    if not isinstance(history, list):
+        return []
+    messages = []
+    for item in history[-ASSISTANT_HISTORY_MESSAGES:]:
+        if isinstance(item, dict) and item.get("role") in ("user", "assistant") and isinstance(item.get("content"), str):
+            messages.append({"role": item["role"], "content": item["content"][:ASSISTANT_HISTORY_MESSAGE_CHARS]})
+    return messages
+
+
+def _run_assistant_tool(name: str, raw_arguments: str) -> tuple[str, dict[str, Any] | None]:
+    """Returns (tool message content, visualization or None)."""
+    try:
+        arguments = json.loads(raw_arguments or "{}")
+        if not isinstance(arguments, dict):
+            raise ValueError("Tool arguments must be a JSON object.")
+        if name == "generate_visualization":
+            result = get_assistant_visualization(arguments)
+            summary = {key: value for key, value in result.items() if key != "image_base64"}
+            return json.dumps({**summary, "status": "Chart generated and shown to the user."}), result
+        content = json.dumps(get_assistant_data(name, arguments), default=str)
+        if len(content) > ASSISTANT_TOOL_RESULT_CHARS:
+            content = content[:ASSISTANT_TOOL_RESULT_CHARS] + " ...[truncated]"
+        return content, None
+    except (LookupError, ValueError, FileNotFoundError, json.JSONDecodeError) as exc:
+        message = exc.args[0] if exc.args else str(exc)
+        return json.dumps({"error": str(message)}), None
+    except Exception:  # keep the conversation going; details go to the log
+        app.logger.exception("Assistant tool %s failed", name)
+        return json.dumps({"error": "Internal error while running this tool."}), None
+
+
+def call_openai(query: str, history: Any = None):
     query = limit_assistant_input(query.strip())
     if not OPENAI_API_KEY or not query:
-        return {
-            "error": {
-                "message": "OpenAI API key is not configured or query is empty.",
-                "type": "configuration_error",
-            }
-        }, 503
+        return {"error": {"message": "OpenAI API key is not configured or query is empty.", "type": "configuration_error"}}, 503
 
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": ASSISTANT_SYSTEM_PROMPT},
-        {"role": "user", "content": query.strip()},
+        *_assistant_history(history),
+        {"role": "user", "content": query},
     ]
-    tool_was_called = False
     visualization: dict[str, Any] | None = None
+    tools_used: list[str] = []
+    usage_total = 0
     try:
-        for _ in range(4):
+        for round_index in range(ASSISTANT_MAX_ROUNDS):
+            final_round = round_index == ASSISTANT_MAX_ROUNDS - 1
             payload = {
-                "model": "gpt-5.4-nano",
+                "model": ASSISTANT_MODEL,
                 "messages": messages,
                 "tools": ASSISTANT_TOOLS,
-                "tool_choice": "required" if not tool_was_called else "auto",
+                "tool_choice": "none" if final_round else "auto",
+                "reasoning_effort": "none",
                 "max_completion_tokens": ASSISTANT_MAX_OUTPUT_TOKENS,
             }
             req = urllib_request.Request(
@@ -1474,84 +1636,40 @@ def call_openai(query: str):
                 headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
                 data=json.dumps(payload).encode("utf-8"),
             )
-            with urllib_request.urlopen(req, timeout=20) as resp:
-                message = json.loads(resp.read().decode("utf-8"))["choices"][0]["message"]
-
+            with urllib_request.urlopen(req, timeout=60) as resp:
+                package = json.loads(resp.read().decode("utf-8"))
+            usage_total += int(package.get("usage", {}).get("total_tokens", 0))
+            message = package["choices"][0]["message"]
             tool_calls = message.get("tool_calls") or []
             if not tool_calls:
                 answer = str(message.get("content") or "").strip()
-                if tool_was_called and answer:
+                app.logger.info("Assistant query=%r tools=%s tokens=%d", query[:200], tools_used, usage_total)
+                if answer:
                     return {"answer": answer, "visualization": visualization}, 200
-                return {"error": {"message": "The assistant did not return an answer.", "type": "response_error"}}, 502
+                return {"error": {"message": "The assistant did not return an answer. Please rephrase the question.", "type": "response_error"}}, 502
 
-            messages.append(message)
+            messages.append({key: message[key] for key in ("role", "content", "tool_calls") if key in message})
             for tool_call in tool_calls:
-                function_name = tool_call.get("function", {}).get("name")
-                if function_name not in {"get_website_data", "generate_visualization"}:
-                    return {"error": {"message": "The assistant returned an unsupported tool call.", "type": "tool_error"}}, 502
-                try:
-                    arguments = json.loads(tool_call["function"]["arguments"])
-                except (TypeError, ValueError, json.JSONDecodeError):
-                    arguments = None
-
-                if function_name == "generate_visualization":
-                    result = get_assistant_visualization(arguments) if arguments is not None else None
-                    if result is not None:
-                        visualization = result
-                        tool_content = json.dumps({**{k: v for k, v in result.items() if k != "image_base64"}, "status": "Chart generated and shown to the user."})
-                    else:
-                        tool_content = json.dumps({
-                            "error": "No chart could be generated with those arguments.",
-                            "hint": (
-                                "Confirm the exact disease, cell_type, and gene spelling by calling get_website_data "
-                                "with source=graph_catalog (or deg_catalog), then retry generate_visualization with "
-                                "the corrected arguments."
-                            ),
-                        })
-                else:
-                    result = get_assistant_data(arguments) if arguments is not None else None
-                    tool_content = json.dumps(result) if result is not None else ASSISTANT_FALLBACK
-
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call["id"],
-                    "content": tool_content,
-                })
-                tool_was_called = tool_was_called or result is not None
+                name = tool_call.get("function", {}).get("name", "")
+                tools_used.append(name)
+                content, chart = _run_assistant_tool(name, tool_call.get("function", {}).get("arguments", ""))
+                if chart is not None:
+                    visualization = chart
+                messages.append({"role": "tool", "tool_call_id": tool_call["id"], "content": content})
     except urllib_error.HTTPError as exc:
         try:
-            response_body = exc.read().decode("utf-8")
-            error_package = json.loads(response_body)
+            error_package = json.loads(exc.read().decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError):
-            response_body = response_body if "response_body" in locals() else ""
-            error_package = {
-                "error": {
-                    "message": str(exc.reason),
-                    "type": "http_error",
-                }
-            }
-        app.logger.error(
-            "OpenAI API request failed: status=%s reason=%s response=%s",
-            exc.code,
-            exc.reason,
-            error_package if error_package else response_body,
-        )
-        return error_package, exc.code
-    except urllib_error.URLError as exc:
-        return {
-            "error": {
-                "message": str(exc.reason),
-                "type": "network_error",
-            }
-        }, 502
+            error_package = {"error": {"message": str(exc.reason), "type": "http_error"}}
+        app.logger.error("OpenAI API request failed: status=%s response=%s", exc.code, error_package)
+        return {"error": {"message": "The AI service returned an error. Please try again later.", "type": "upstream_error"}}, 502
+    except (urllib_error.URLError, TimeoutError) as exc:
+        app.logger.error("OpenAI API unreachable: %s", exc)
+        return {"error": {"message": "The AI service could not be reached. Please try again later.", "type": "network_error"}}, 502
     except (json.JSONDecodeError, KeyError, IndexError) as exc:
-        return {
-            "error": {
-                "message": str(exc),
-                "type": "response_error",
-            }
-        }, 502
-    return {"error": {"message": "The assistant did not return an answer.", "type": "response_error"}}, 502
+        app.logger.error("Unexpected OpenAI response: %r", exc)
+        return {"error": {"message": "Unexpected response from the AI service.", "type": "response_error"}}, 502
+    return {"error": {"message": "The assistant did not return an answer. Please rephrase the question.", "type": "response_error"}}, 502
 
 
 @app.route("/")
@@ -1876,7 +1994,7 @@ def api_graph_network():
 def api_query():
     payload = request.get_json(silent=True) or {}
     query = str(payload.get("query") or "")
-    result, status_code = call_openai(query)
+    result, status_code = call_openai(query, history=payload.get("history"))
     if status_code != 200:
         return jsonify(result), status_code
     return jsonify(result)

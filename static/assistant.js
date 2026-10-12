@@ -4,11 +4,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const messages = document.getElementById('assistant-messages');
   const submit = document.getElementById('assistant-submit');
   if (!form || !input || !messages || !submit) return;
+  const history = [];
+  const MAX_HISTORY = 6;
+
+  const escapeHtml = (text) => text.replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[ch]);
+
+  // Escape first, then allow only **bold** and line breaks from the model's text.
+  const formatAnswer = (text) => escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
 
   const addMessage = (role, text) => {
     const message = document.createElement('p');
     message.className = `assistant-message ${role}`;
-    message.textContent = text;
+    if (role === 'assistant') {
+      message.innerHTML = formatAnswer(text);
+    } else {
+      message.textContent = text;
+    }
     messages.appendChild(message);
     messages.scrollTop = messages.scrollHeight;
   };
@@ -37,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     messages.scrollTop = messages.scrollHeight;
   };
 
-  addMessage('assistant', 'Ask a question about the data available in this portal.');
+  addMessage('assistant', 'Ask about genes in liver diseases, for example: "Is SPP1 upregulated in HCC macrophages?", "Top 10 genes down in PBC cholangiocytes", or "Show ALB expression across cell types".');
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -52,13 +67,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch('/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, history: history.slice(-MAX_HISTORY) }),
       });
       const payload = await response.json();
-      addMessage('assistant', response.ok ? payload.answer || 'I do not know' : 'I do not know');
-      if (response.ok) addVisualization(payload.visualization);
+      if (response.ok && payload.answer) {
+        addMessage('assistant', payload.answer);
+        addVisualization(payload.visualization);
+        history.push({ role: 'user', content: query }, { role: 'assistant', content: payload.answer });
+      } else {
+        addMessage('assistant', payload?.error?.message || 'Sorry, something went wrong. Please try again.');
+      }
     } catch (error) {
-      addMessage('assistant', 'I do not know');
+      addMessage('assistant', 'The assistant could not be reached. Please try again.');
     } finally {
       input.disabled = false;
       submit.disabled = false;

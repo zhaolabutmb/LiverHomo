@@ -31,3 +31,6 @@ figs/
 *.swp
 tmp/
 .DS_Store
+
+# Assistant evaluation output
+scripts/eval_results/
