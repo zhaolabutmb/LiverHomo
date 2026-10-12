@@ -1700,12 +1700,9 @@ def resources_page():
 
 @app.route("/metadata_download")
 def metadata_download():
-    dataset_path = os.path.join(app.root_path, "adata_reprocessed_gzip.h5ad")
-    return send_file(
-        dataset_path,
-        as_attachment=True,
-        download_name="adata_reprocessed_gzip.h5ad",
-    )
+    if not os.path.isfile(METADATA_PATH):
+        return jsonify({"error": "The metadata file is not available."}), 404
+    return send_file(METADATA_PATH, as_attachment=True, download_name="liverhomo_metadata.h5ad")
 
 
 @app.route("/contact")

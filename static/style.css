@@ -72,6 +72,13 @@ textarea {
   gap: 12px;
   color: var(--utmb-dark);
   letter-spacing: 0.01em;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.brand-mark:focus-visible {
+  outline: 3px solid var(--utmb-blue);
+  outline-offset: 4px;
 }
 
 .brand-mark img {
@@ -880,7 +887,7 @@ th.sortable:hover {
 .landing-about h1 {
   margin: 0;
   color: var(--utmb-dark);
-  font-size: clamp(3rem, 7vw, 6.4rem);
+  font-size: clamp(2.55rem, 5.95vw, 5.44rem);
   line-height: 0.94;
   letter-spacing: -0.055em;
 }
@@ -1193,6 +1200,111 @@ th.sortable:hover {
   white-space: nowrap;
 }
 
+.composition-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.composition-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  color: var(--utmb-muted);
+  font-size: 0.82rem;
+}
+
+.composition-legend span:first-child {
+  margin-right: 4px;
+  color: var(--utmb-text);
+  font-weight: 600;
+}
+
+.composition-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 12px;
+  border: 1px solid var(--utmb-line);
+  border-radius: 3px;
+}
+
+.composition-matrix {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.composition-matrix th,
+.composition-matrix td {
+  padding: 6px 10px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.composition-matrix td {
+  text-align: right;
+  color: var(--utmb-text);
+  font-weight: 400;
+  border-bottom: 2px solid #fff;
+}
+
+.landing-table.composition-matrix td:first-child,
+.landing-table.composition-matrix td:last-child {
+  color: var(--utmb-text);
+  font-weight: 400;
+}
+
+.composition-matrix thead th {
+  z-index: 2;
+  text-align: right;
+}
+
+.composition-matrix thead th:first-child {
+  left: 0;
+  z-index: 3;
+  text-align: left;
+}
+
+.composition-matrix tbody th {
+  position: sticky;
+  left: 0;
+  top: auto;
+  z-index: 1;
+  background: #fff;
+  font-weight: 600;
+  text-align: left;
+}
+
+.composition-matrix tbody tr:nth-child(even),
+.composition-matrix tbody tr:hover {
+  background: transparent;
+}
+
+.composition-matrix tbody tr:hover th {
+  background: #edf5ff;
+}
+
+/* Sequential blue ramp; text colour keeps WCAG contrast of at least 4.5:1 on every step. */
+.composition-matrix .share-0 { background: #fff; color: var(--utmb-muted); }
+.share-1 { background: #e3eef9; }
+.share-2 { background: #bcd6f0; }
+.share-3 { background: #86b4e0; }
+.share-4 { background: #2f6bb0; }
+.share-5 { background: #0c3a6a; }
+.landing-table.composition-matrix td.share-4,
+.landing-table.composition-matrix td.share-5 { color: #fff; }
+
+.composition-matrix .composition-total th,
+.composition-matrix .composition-total td {
+  border-top: 2px solid var(--utmb-dark);
+  background: #f3f8fd;
+  color: var(--utmb-dark);
+  font-weight: 700;
+}
+
 .landing-citation {
   padding: 24px 0;
   border-top: 1px solid var(--utmb-line);
@@ -1231,17 +1343,26 @@ th.sortable:hover {
 .landing-footer a {
   display: inline-flex;
   align-items: center;
-  padding: 10px 16px;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 85px;
+  padding: 6px 14px;
   border-radius: 12px;
   background: #fff;
   box-shadow: var(--shadow);
 }
 
+/* Heights give each logo roughly the same visual area, since their
+   width-to-height ratios range from 1.4 (Zhao Lab) to 4.2 (UT System). */
 .landing-footer img {
   display: block;
-  height: 64px;
   width: auto;
 }
+
+.landing-footer .logo-lab { height: 72px; }
+.landing-footer .logo-welch { height: 61px; }
+.landing-footer .logo-utmb { height: 54px; }
+.landing-footer .logo-utsystem { height: 46px; }
 
 .node {
   fill: #2c7be5;
@@ -1566,7 +1687,7 @@ th.sortable:hover {
   }
 
   .landing-about h1 {
-    font-size: clamp(2.7rem, 14vw, 4.4rem);
+    font-size: clamp(2.3rem, 11.9vw, 3.74rem);
   }
 
   .landing-intro {
@@ -1614,9 +1735,11 @@ th.sortable:hover {
     gap: 14px;
   }
 
-  .landing-footer img {
-    height: 44px;
-  }
+  .landing-footer a { height: 65px; }
+  .landing-footer .logo-lab { height: 50px; }
+  .landing-footer .logo-welch { height: 43px; }
+  .landing-footer .logo-utmb { height: 38px; }
+  .landing-footer .logo-utsystem { height: 32px; }
 
   .contact-panel {
     padding: 20px 16px;

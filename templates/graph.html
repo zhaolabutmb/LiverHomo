@@ -10,9 +10,9 @@
   <body class="graph-body">
     <div class="app-shell">
       <header class="app-header">
-        <div class="brand-mark">
+        <a class="brand-mark" href="{{ url_for('index') }}" aria-label="LiverHomo home">
           <img src="{{ url_for('static', filename='liverhomo-logo-web.png') }}" alt="LiverHomo" />
-        </div>
+        </a>
         <button class="nav-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation">
           <span class="hamburger-icon" aria-hidden="true"></span>
         </button>

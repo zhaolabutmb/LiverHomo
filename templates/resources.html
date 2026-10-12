@@ -10,9 +10,9 @@
   <body class="atlas-body">
     <div class="app-shell resources-shell">
       <header class="app-header">
-        <div class="brand-mark">
+        <a class="brand-mark" href="{{ url_for('index') }}" aria-label="LiverHomo home">
           <img src="{{ url_for('static', filename='liverhomo-logo-web.png') }}" alt="LiverHomo" />
-        </div>
+        </a>
         <button class="nav-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation">
           <span class="hamburger-icon" aria-hidden="true"></span>
         </button>
@@ -113,9 +113,13 @@
               <h1 id="resources-title">Data Download</h1>
             </div>
           </div>
-          <p>Download the LiverHomo metadata dataset.</p>
+          <p>
+            Download the LiverHomo cell metadata: one row per cell for all 1.16 million cells, with cell type,
+            disease, source dataset and quality-control metrics. The file is in AnnData (.h5ad) format and
+            contains no expression values.
+          </p>
           <a class="download-link" href="{{ url_for('metadata_download') }}">
-            Download adata_reprocessed_gzip.h5ad
+            Download liverhomo_metadata.h5ad (150 MB)
           </a>
         </section>
       </main>

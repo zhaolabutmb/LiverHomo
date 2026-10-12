@@ -10,9 +10,9 @@
   <body class="landing-body">
     <main class="landing-shell">
       <header class="app-header">
-        <div class="brand-mark">
+        <a class="brand-mark" href="{{ url_for('index') }}" aria-label="LiverHomo home">
           <img src="{{ url_for('static', filename='liverhomo-logo-web.png') }}" alt="LiverHomo" />
-        </div>
+        </a>
         <button class="nav-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation">
           <span class="hamburger-icon" aria-hidden="true"></span>
         </button>
@@ -123,19 +123,23 @@
             <select id="composition-cell-type" multiple size="8"></select>
             <button id="composition-reset" class="secondary" type="button">Reset filters</button>
           </aside>
-          <div class="landing-table-wrap">
-            <table class="landing-table">
-              <thead>
-                <tr>
-                  <th scope="col">Disease</th>
-                  <th scope="col">Cell type</th>
-                  <th scope="col">Cell count</th>
-                </tr>
-              </thead>
-              <tbody id="composition-body">
-                <tr><td colspan="3">Loading static composition snapshot...</td></tr>
-              </tbody>
-            </table>
+          <div class="composition-main">
+            <div class="composition-legend">
+              <span>Shading: share of that disease's cells</span>
+              <span class="composition-swatch share-1"></span>&lt;1%
+              <span class="composition-swatch share-2"></span>1&ndash;3%
+              <span class="composition-swatch share-3"></span>3&ndash;10%
+              <span class="composition-swatch share-4"></span>10&ndash;25%
+              <span class="composition-swatch share-5"></span>&ge;25%
+            </div>
+            <div class="landing-table-wrap">
+              <table class="landing-table composition-matrix">
+                <thead id="composition-head"></thead>
+                <tbody id="composition-body">
+                  <tr><td>Loading static composition snapshot...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -202,9 +206,28 @@
               }
             });
 
-            const diseases = Object.keys(composition);
+            // References first, then the disease groups in file order.
+            const referenceGroups = ["Healthy", "Adjacent Normal"];
+            const diseases = [
+              ...referenceGroups.filter((name) => name in composition),
+              ...Object.keys(composition).filter((name) => !referenceGroups.includes(name)),
+            ];
             const cellTypes = [...new Set(Object.values(composition).flatMap((cells) => Object.keys(cells)))].sort();
-            const populateFilter = (select, values, formatLabel = (value) => value.replaceAll("_", " ")) => {
+            const shortName = (disease) => atlasDiseaseNames[disease] || disease;
+            const cellTypeLabel = (cellType) => cellType.replaceAll("_", " ");
+            // Shares use each disease's full total, so filtering never changes a cell's shade.
+            const diseaseTotals = Object.fromEntries(
+              diseases.map((disease) => [disease, Object.values(composition[disease]).reduce((sum, count) => sum + count, 0)]),
+            );
+            const shareClass = (share) => {
+              if (share === 0) return "share-0";
+              if (share < 0.01) return "share-1";
+              if (share < 0.03) return "share-2";
+              if (share < 0.1) return "share-3";
+              if (share < 0.25) return "share-4";
+              return "share-5";
+            };
+            const populateFilter = (select, values, formatLabel = cellTypeLabel) => {
               values.forEach((value) => {
                 const option = document.createElement("option");
                 option.value = value;
@@ -214,57 +237,57 @@
               });
             };
 
+            const head = document.getElementById("composition-head");
             const selectedValues = (select) => new Set([...select.selectedOptions].map((option) => option.value));
+            const addCell = (row, tag, text, attributes = {}) => {
+              const cell = document.createElement(tag);
+              cell.textContent = text;
+              Object.entries(attributes).forEach(([name, value]) => cell.setAttribute(name, value));
+              row.appendChild(cell);
+              return cell;
+            };
             const renderComposition = () => {
-              const selectedDiseases = selectedValues(diseaseFilter);
-              const selectedCellTypes = selectedValues(cellTypeFilter);
+              const shownDiseases = diseases.filter((disease) => selectedValues(diseaseFilter).has(disease));
+              const shownCellTypes = cellTypes.filter((cellType) => selectedValues(cellTypeFilter).has(cellType));
+              head.replaceChildren();
               body.replaceChildren();
+              if (shownDiseases.length === 0 || shownCellTypes.length === 0) {
+                const row = body.insertRow();
+                addCell(row, "td", "No cell composition data matches these filters.");
+                return;
+              }
 
-              diseases.forEach((disease) => {
-                if (!selectedDiseases.has(disease)) return;
-                const entries = Object.entries(composition[disease]).filter(([cellType]) => selectedCellTypes.has(cellType));
-                if (entries.length === 0) return;
+              const headerRow = document.createElement("tr");
+              addCell(headerRow, "th", "Cell type", { scope: "col" });
+              shownDiseases.forEach((disease) => addCell(headerRow, "th", shortName(disease), { scope: "col", title: disease }));
+              head.appendChild(headerRow);
 
-                const total = entries.reduce((sum, [, count]) => sum + count, 0);
-
-                entries.forEach(([cellType, count], index) => {
-                  const row = document.createElement("tr");
-                  if (index === 0) {
-                    const diseaseCell = document.createElement("td");
-                    diseaseCell.rowSpan = entries.length + 1;
-                    diseaseCell.textContent = disease;
-                    row.appendChild(diseaseCell);
-                  }
-
-                  const cellTypeCell = document.createElement("td");
-                  cellTypeCell.textContent = cellType.replaceAll("_", " ");
-                  row.appendChild(cellTypeCell);
-
-                  const countCell = document.createElement("td");
-                  countCell.textContent = count.toLocaleString();
-                  row.appendChild(countCell);
-                  body.appendChild(row);
+              shownCellTypes.forEach((cellType) => {
+                const row = document.createElement("tr");
+                addCell(row, "th", cellTypeLabel(cellType), { scope: "row" });
+                shownDiseases.forEach((disease) => {
+                  const count = composition[disease][cellType] || 0;
+                  const share = count / diseaseTotals[disease];
+                  const percent = share < 0.001 && count > 0 ? "<0.1" : (share * 100).toFixed(1);
+                  addCell(row, "td", count.toLocaleString(), {
+                    class: shareClass(share),
+                    title: `${shortName(disease)} \u00b7 ${cellTypeLabel(cellType)}: ${count.toLocaleString()} cells (${percent}% of ${shortName(disease)})`,
+                  });
                 });
-
-                const totalRow = document.createElement("tr");
-                const totalCellTypeCell = document.createElement("td");
-                totalCellTypeCell.textContent = "Total";
-                totalCellTypeCell.style.fontWeight = "700";
-                totalRow.appendChild(totalCellTypeCell);
-
-                const totalCountCell = document.createElement("td");
-                totalCountCell.textContent = total.toLocaleString();
-                totalCountCell.style.fontWeight = "700";
-                totalRow.appendChild(totalCountCell);
-                body.appendChild(totalRow);
+                body.appendChild(row);
               });
 
-              if (body.children.length === 0) {
-                body.innerHTML = '<tr><td colspan="3">No cell composition data matches these filters.</td></tr>';
-              }
+              const totalRow = document.createElement("tr");
+              totalRow.className = "composition-total";
+              addCell(totalRow, "th", shownCellTypes.length === cellTypes.length ? "Total" : "Total (shown)", { scope: "row" });
+              shownDiseases.forEach((disease) => {
+                const total = shownCellTypes.reduce((sum, cellType) => sum + (composition[disease][cellType] || 0), 0);
+                addCell(totalRow, "td", total.toLocaleString());
+              });
+              body.appendChild(totalRow);
             };
 
-            populateFilter(diseaseFilter, diseases, (disease) => atlasDiseaseNames[disease] || disease);
+            populateFilter(diseaseFilter, diseases, shortName);
             populateFilter(cellTypeFilter, cellTypes);
             diseaseFilter.addEventListener("change", renderComposition);
             cellTypeFilter.addEventListener("change", renderComposition);
@@ -278,7 +301,7 @@
           })
           .catch(() => {
             document.getElementById("composition-body").innerHTML =
-              '<tr><td colspan="3">Composition snapshot unavailable.</td></tr>';
+              '<tr><td>Composition snapshot unavailable.</td></tr>';
           });
       </script>
 
@@ -296,13 +319,16 @@
 
       <footer class="landing-footer">
         <a href="https://zhaolabutmb.github.io" target="_blank" rel="noopener">
-          <img src="{{ url_for('static', filename='lab-logo-web.png') }}" alt="Zhao Lab" />
+          <img class="logo-lab" src="{{ url_for('static', filename='lab-logo-web.png') }}" alt="Zhao Lab" />
         </a>
         <a href="https://welch1.org/" target="_blank" rel="noopener">
-          <img src="{{ url_for('static', filename='welch-logo-web.png') }}" alt="The Welch Foundation" />
+          <img class="logo-welch" src="{{ url_for('static', filename='welch-logo-web.png') }}" alt="The Welch Foundation" />
         </a>
         <a href="https://www.utmb.edu" target="_blank" rel="noopener">
-          <img src="{{ url_for('static', filename='utmb-logo.png') }}" alt="UTMB" />
+          <img class="logo-utmb" src="{{ url_for('static', filename='utmb-logo-web.png') }}" alt="The University of Texas Medical Branch" />
+        </a>
+        <a href="https://www.utsystem.edu/offices/health-affairs/initiatives-and-departments/facility-science-and-technology-acquisition-and-retention-stars-program" target="_blank" rel="noopener">
+          <img class="logo-utsystem" src="{{ url_for('static', filename='ut-system-logo-web.svg') }}" alt="The University of Texas System STARS Program" />
         </a>
       </footer>
     </main>
