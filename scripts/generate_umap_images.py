@@ -10,7 +10,6 @@ import matplotlib
 import numpy as np
 import pandas as pd
 from anndata.io import read_elem
-from dotenv import load_dotenv
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -19,6 +18,7 @@ from matplotlib.lines import Line2D
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from env_config import load_env  # noqa: E402
 from umap_config import UMAP_METADATA_COLUMNS, UMAP_STATIC_IMAGE_FILES
 
 
@@ -118,10 +118,10 @@ def generate_umap_images(input_path: Path, figure_root: Path, catalog_path: Path
 
 
 def main() -> None:
-    load_dotenv(PROJECT_ROOT / ".env")
+    load_env()
     parser = argparse.ArgumentParser(description="Generate static, full-dataset UMAPs for every UMAP_METADATA_COLUMNS entry.")
     parser.add_argument("--input", type=Path, default=os.environ.get("DATA_PATH"))
-    parser.add_argument("--figures", type=Path, default=PROJECT_ROOT / "figs")
+    parser.add_argument("--figures", type=Path, default=os.environ.get("FIGS_ROOT", PROJECT_ROOT / "figs"))
     parser.add_argument("--catalog", type=Path, default=PROJECT_ROOT / "static" / "filter_catalog.json")
     args = parser.parse_args()
     if args.input is None:

@@ -1,15 +1,19 @@
 import argparse
 import os
+import sys
 import tempfile
 from pathlib import Path
 
 import anndata as ad
 import h5py
-from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 os.chdir(PROJECT_ROOT)
-load_dotenv(PROJECT_ROOT / ".env")
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from env_config import load_env  # noqa: E402
+
+load_env()
 
 OBS_COLUMNS = ("cell_type2", "diagnosis", "total_counts")
 
@@ -107,16 +111,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Create an AnnData file containing full-gene expression and required gene-viewer metadata."
     )
-    input_default = os.environ.get("DATA_PATH")
-    if not input_default:
-        parser.error("Set DATA_PATH in the environment or pass --input.")
-    output_default = os.environ.get("GENE_EXPRESSION_DATA_PATH") or str(
-        Path(input_default).parent / "adata_gene_expression.h5ad"
-    )
-    parser.add_argument("--input", type=Path, default=Path(input_default))
-    parser.add_argument("--output", type=Path, default=Path(output_default))
+    parser.add_argument("--input", type=Path, default=os.environ.get("DATA_PATH"))
+    parser.add_argument("--output", type=Path, default=os.environ.get("GENE_EXPRESSION_DATA_PATH"))
     parser.add_argument("--force", action="store_true", help="Replace an existing output file.")
     args = parser.parse_args()
+    if args.input is None:
+        parser.error("Pass --input or configure DATA_PATH.")
+    if args.output is None:
+        args.output = args.input.parent / "adata_gene_expression.h5ad"
     build_gene_expression_adata(args.input, args.output, force=args.force)
     print(f"Generated compact gene-expression AnnData: {args.output}")
 

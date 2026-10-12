@@ -5,7 +5,8 @@ From the project root, run::
 
     .venv/bin/python scripts/generate_umap_images.py
 
-The generator reads ``DATA_PATH`` from the environment or ``.env``.
+The generator reads ``DATA_PATH`` from the environment or the shared ``.env``
+(see ``.env.example``; override its location with ``ENV_FILE``).
 Use ``--input`` to specify another AnnData file. It reads only the saved
 ``obsm/X_umap`` coordinates and observation columns, not expression matrices.
 

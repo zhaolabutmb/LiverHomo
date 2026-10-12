@@ -1,8 +1,11 @@
 import os
+import sys
 
-from dotenv import load_dotenv
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-load_dotenv()
+from env_config import load_env  # noqa: E402
+
+load_env()
 
 bind = os.environ.get("BIND", f"{os.environ.get('HOST', '0.0.0.0')}:{os.environ.get('PORT', '5000')}")
 worker_class = "gthread"

@@ -1,3 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Secrets
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*
+*secret*
+
+# Data and generated files (kept outside the repository)
+*.h5ad
+*.h5
+*.hdf5
+*.loom
+*.zarr/
+*.parquet
 .cache/
-adata_gene_expression.h5ad
+figs/
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+tmp/
+.DS_Store

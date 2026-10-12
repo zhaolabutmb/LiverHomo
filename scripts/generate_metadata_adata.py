@@ -1,16 +1,20 @@
 import argparse
 import os
+import sys
 import tempfile
 from pathlib import Path
 
 import anndata as ad
 import h5py
 import pandas as pd
-from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 os.chdir(PROJECT_ROOT)
-load_dotenv(PROJECT_ROOT / ".env")
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from env_config import load_env  # noqa: E402
+
+load_env()
 
 
 def build_metadata_adata(input_path: Path, output_path: Path, force: bool = False) -> None:
@@ -69,13 +73,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Create an observation-only AnnData file with all cell metadata rows."
     )
-    input_default = os.environ.get("DATA_PATH")
-    if not input_default:
-        parser.error("Set DATA_PATH in the environment or pass --input.")
-    parser.add_argument("--input", type=Path, default=Path(input_default))
-    parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "adata_metadata.h5ad")
+    parser.add_argument("--input", type=Path, default=os.environ.get("DATA_PATH"))
+    parser.add_argument("--output", type=Path, default=os.environ.get("METADATA_PATH"))
     parser.add_argument("--force", action="store_true", help="Replace an existing output file.")
     args = parser.parse_args()
+    if args.input is None:
+        parser.error("Pass --input or configure DATA_PATH.")
+    if args.output is None:
+        args.output = args.input.parent / "adata_metadata.h5ad"
     build_metadata_adata(args.input, args.output, force=args.force)
     print(f"Generated compact metadata AnnData: {args.output}")
 

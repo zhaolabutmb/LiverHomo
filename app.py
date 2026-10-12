@@ -19,16 +19,18 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import tiktoken
-from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_file, url_for
 from openpyxl import load_workbook
+from env_config import load_env
 from umap_config import UMAP_METADATA_COLUMNS, UMAP_STATIC_IMAGE_FILES
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-load_dotenv()
+load_env()
 
+METADATA_PATH = os.environ["METADATA_PATH"]
+FIGS_ROOT = os.environ["FIGS_ROOT"]
 GRAPH_ROOT = os.environ["GRAPH_ROOT"]
 DEG_ROOT = os.environ["DEG_ROOT"]
 VOLCANO_ROOT = os.environ["VOLCANO_ROOT"]
@@ -76,7 +78,7 @@ GENE_PLOT_MAX_POINTS = 60_000
 def load_adata():
     global _adata
     if _adata is None:
-        _adata = ad.read_h5ad(DATA_PATH, backed="r")
+        _adata = ad.read_h5ad(METADATA_PATH, backed="r")
     return _adata
 
 
@@ -772,7 +774,7 @@ def get_static_umap_image_path(column: str) -> str | None:
     filename = UMAP_STATIC_IMAGE_FILES.get(column)
     if filename is None:
         return None
-    return os.path.join(app.root_path, "figs", filename)
+    return os.path.join(FIGS_ROOT, filename)
 
 
 def summarize_dataset():
@@ -780,7 +782,7 @@ def summarize_dataset():
     filter_catalog = load_filter_catalog()
     summary = {
         "cells": int(adata.n_obs),
-        "genes": int(adata.n_vars),
+        "genes": int(load_gene_expression_adata().n_vars),
         "obs_columns": len(adata.obs.columns),
         "sample_columns": list(adata.obs.columns[:12]),
         "dataset_counts": {},
@@ -789,7 +791,7 @@ def summarize_dataset():
         "cell_type_options": filter_catalog["metadata"]["cell_types"],
         "disease_column": "diagnosis" if "diagnosis" in adata.obs.columns else None,
         "disease_options": filter_catalog["metadata"]["diseases"],
-        "umap_columns": filter_catalog["umap_columns"],
+        "umap_columns": get_static_umap_metadata_columns(),
     }
 
     if "dataset" in adata.obs.columns:
@@ -1647,7 +1649,7 @@ def api_summary():
         "cell_type_options": filter_catalog["metadata"]["cell_types"],
         "disease_column": None,
         "disease_options": filter_catalog["metadata"]["diseases"],
-        "umap_columns": filter_catalog["umap_columns"],
+        "umap_columns": get_static_umap_metadata_columns(),
     })
 
 
