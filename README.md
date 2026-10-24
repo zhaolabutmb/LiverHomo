@@ -87,6 +87,7 @@ The app finds its data through paths set in a `.env` file:
 | `FIGS_ROOT` | Pre-rendered figures; UMAP images in `umap/` |
 | `VOLCANO_ROOT`, `EGO_ROOT`, `CELL_INTERACTION_ROOT` | Volcano plots, GO networks, interaction heatmaps and counts |
 | `GENE_VECTOR_CACHE_DIR` | Writable folder for the per-gene cache |
+| `GRAPH_CACHE_DIR` | Writable folder for fast copies of the PPI edge lists (optional; defaults to `ppi_edges` next to `GENE_VECTOR_CACHE_DIR`) |
 
 ### Setup
 
@@ -112,7 +113,16 @@ python scripts/generate_metadata_adata.py          # -> METADATA_PATH
 python scripts/generate_gene_expression_adata.py   # -> GENE_EXPRESSION_DATA_PATH
 python scripts/generate_umap_images.py             # -> FIGS_ROOT/umap/*.png
 python scripts/generate_filter_catalog.py          # -> static/filter_catalog.json
+python scripts/generate_graph_cache.py             # GRAPH_ROOT/*.xlsx -> GRAPH_CACHE_DIR/*.npz
 ```
+
+Run `generate_graph_cache.py` whenever edge lists are added or replaced. Reading an `.xlsx`
+edge list takes up to two minutes; the `.npz` copy loads in well under a second. The app
+converts a missing or outdated file on first use, but that first view is slow.
+
+The network viewer shows the 200 highest-scoring interactions of the selected network (or,
+with a gene list, the 200 highest-scoring interactions involving those genes). The full edge
+list is available with **Download full network**.
 
 ### Start the server
 
@@ -145,6 +155,7 @@ A full run costs about US$0.02 in API usage.
 app.py                 Flask app: pages, data APIs, AI assistant
 assistant_data.py      DEG index and disease/cell-type name matching for the assistant
 expression_store.py    Low-memory readers for the expression and metadata files
+graph_store.py         Fast reader and cache for the PPI edge lists
 env_config.py          Loads the shared .env (override with ENV_FILE)
 umap_config.py         Metadata columns that have UMAP images
 gunicorn.conf.py       Server settings

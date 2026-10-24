@@ -9,4 +9,3 @@ numpy
 networkx
 seaborn
 matplotlib
-openpyxl>=3.1.0

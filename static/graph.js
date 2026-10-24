@@ -230,7 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
     resetGraphView();
     const label = graph.graph ? `${graph.graph.disease} / ${graph.graph.cell_type}` : 'Current graph';
     const layoutLabel = graphLayoutSelect.selectedOptions[0]?.textContent || 'Random';
-    setGraphCaption(`${label} · ${layoutLabel}: ${nodes.length} nodes, ${edges.length} edges`);
+    const total = graph.total_edges || edges.length;
+    const shown = total > edges.length
+      ? `top ${edges.length.toLocaleString()} of ${total.toLocaleString()} interactions by PrePPI score`
+      : `${edges.length.toLocaleString()} interactions`;
+    setGraphCaption(`${label} · ${layoutLabel}: ${nodes.length} nodes, ${shown}`);
     setDownloadState();
   };
 

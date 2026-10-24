@@ -6,7 +6,7 @@ import os
 import re
 import smtplib
 import threading
-from collections import deque
+from collections import OrderedDict, deque
 from email.message import EmailMessage
 from typing import Any
 from urllib import error as urllib_error
@@ -19,10 +19,10 @@ import pandas as pd
 import seaborn as sns
 import tiktoken
 from flask import Flask, jsonify, render_template, request, send_file, url_for
-from openpyxl import load_workbook
 from assistant_data import DegIndex, NameResolver, load_composition, short_disease_name
 from env_config import load_env
 from expression_store import ExpressionStore, MetadataStore
+from graph_store import GraphEdges, load_edges
 from umap_config import UMAP_METADATA_COLUMNS, UMAP_STATIC_IMAGE_FILES
 
 matplotlib.use("Agg")
@@ -39,6 +39,7 @@ EGO_ROOT = os.environ["EGO_ROOT"]
 CELL_INTERACTION_ROOT = os.environ["CELL_INTERACTION_ROOT"]
 GENE_EXPRESSION_DATA_PATH = os.environ["GENE_EXPRESSION_DATA_PATH"]
 GENE_VECTOR_CACHE_DIR = os.environ["GENE_VECTOR_CACHE_DIR"]
+GRAPH_CACHE_DIR = os.environ.get("GRAPH_CACHE_DIR") or os.path.join(os.path.dirname(GENE_VECTOR_CACHE_DIR), "ppi_edges")
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 CONTACT_RECIPIENT = "zhaoresearchlab@gmail.com"
 SMTP_HOST = os.environ.get("SMTP_HOST", "")
@@ -46,9 +47,11 @@ SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", SMTP_USERNAME)
-GRAPH_LAYOUT_EDGE_LIMIT = None
+# Networks have up to ~300,000 edges; only the strongest are laid out and drawn.
+GRAPH_DISPLAY_EDGES = 200
 GRAPH_LAYOUTS = {"spring", "kamada_kawai", "random"}
-GRAPH_DATA_CACHE: dict[str, dict[str, Any]] = {}
+GRAPH_DATA_CACHE_SIZE = 8  # networks kept in memory (~4 MB each)
+GRAPH_DATA_CACHE: OrderedDict[str, GraphEdges] = OrderedDict()
 GRAPH_DATA_CACHE_LOCK = threading.Lock()
 GRAPH_DATA_LOADING: set[str] = set()
 GRAPH_DATA_ERRORS: dict[str, str] = {}
@@ -158,95 +161,52 @@ def parse_graph_label(path: str) -> dict[str, str]:
     return {"disease": disease, "cell_type": cell_type, "file": name, "path": path}
 
 
-def load_graph_data(path: str, max_edges: int | None = None) -> dict[str, Any]:
-    cache_key = f"{path}:{max_edges or 0}"
+def load_graph_data(path: str) -> GraphEdges:
     with GRAPH_DATA_CACHE_LOCK:
-        cached = GRAPH_DATA_CACHE.get(cache_key)
+        cached = GRAPH_DATA_CACHE.get(path)
         if cached is not None:
+            GRAPH_DATA_CACHE.move_to_end(path)
             return cached
-
-    if path.lower().endswith(".txt"):
-        try:
-            frame = pd.read_csv(path, sep="\t", header=None, names=["geneID1", "geneID2"], engine="python")
-        except pd.errors.EmptyDataError:
-            return {"nodes": [], "edges": []}
-        frame = frame.dropna(subset=["geneID1", "geneID2"]).copy()
-        frame["geneID1"] = frame["geneID1"].astype(str).str.strip()
-        frame["geneID2"] = frame["geneID2"].astype(str).str.strip()
-        frame = frame[frame["geneID1"] != ""][frame["geneID2"] != ""]
-        if frame.empty:
-            return {"nodes": [], "edges": []}
-        combined = frame.drop_duplicates(subset=["geneID1", "geneID2"])
-        nodes = sorted(set(combined["geneID1"].tolist()) | set(combined["geneID2"].tolist()))
-        edges = [{"source": str(row["geneID1"]), "target": str(row["geneID2"]), "score": 1.0} for _, row in combined.iterrows()]
-        payload = {"nodes": nodes, "edges": edges}
-        with GRAPH_DATA_CACHE_LOCK:
-            GRAPH_DATA_CACHE[cache_key] = payload
-        return payload
-
-    edges_by_key = {}
-    workbook = load_workbook(path, read_only=True, data_only=True)
-    try:
-        for sheet in workbook.worksheets:
-            rows = sheet.iter_rows(values_only=True)
-            headers = [str(value).strip() if value is not None else "" for value in next(rows, ())]
-            columns = {name: headers.index(name) for name in ("geneID1", "geneID2", "Score") if name in headers}
-            if len(columns) != 3:
-                continue
-            for row in rows:
-                source = row[columns["geneID1"]]
-                target = row[columns["geneID2"]]
-                score = row[columns["Score"]]
-                if source is None or target is None or score is None:
-                    continue
-                key = (str(source), str(target), str(score))
-                edges_by_key[key] = {"source": str(source), "target": str(target), "score": float(score)}
-    finally:
-        workbook.close()
-
-    edges = list(edges_by_key.values())
-    if max_edges is not None and len(edges) > max_edges:
-        edges.sort(key=lambda edge: edge["score"], reverse=True)
-        edges = edges[:max_edges]
-    nodes = sorted({edge["source"] for edge in edges} | {edge["target"] for edge in edges})
-    payload = {"nodes": nodes, "edges": edges}
+    edges = load_edges(path, GRAPH_CACHE_DIR)
     with GRAPH_DATA_CACHE_LOCK:
-        GRAPH_DATA_CACHE[cache_key] = payload
-    return payload
+        GRAPH_DATA_CACHE[path] = edges
+        while len(GRAPH_DATA_CACHE) > GRAPH_DATA_CACHE_SIZE:
+            GRAPH_DATA_CACHE.popitem(last=False)
+    return edges
 
 
 def get_graph_catalog() -> list[dict[str, Any]]:
     return [parse_graph_label(path) for path in list_graph_files()]
 
 
-def start_graph_data_load(path: str, max_edges: int | None = None):
-    cache_key = f"{path}:{max_edges or 0}"
+def start_graph_data_load(path: str):
     with GRAPH_DATA_CACHE_LOCK:
-        if cache_key in GRAPH_DATA_CACHE or cache_key in GRAPH_DATA_LOADING:
+        if path in GRAPH_DATA_CACHE or path in GRAPH_DATA_LOADING:
             return
-        GRAPH_DATA_LOADING.add(cache_key)
+        GRAPH_DATA_LOADING.add(path)
+        GRAPH_DATA_ERRORS.pop(path, None)
 
     def load():
         try:
-            load_graph_data(path, max_edges=max_edges)
+            load_graph_data(path)
         except Exception as exc:  # pragma: no cover - depends on external graph files
+            app.logger.exception("Loading graph %s failed", path)
             with GRAPH_DATA_CACHE_LOCK:
-                GRAPH_DATA_ERRORS[cache_key] = str(exc)
+                GRAPH_DATA_ERRORS[path] = str(exc)
         finally:
             with GRAPH_DATA_CACHE_LOCK:
-                GRAPH_DATA_LOADING.discard(cache_key)
+                GRAPH_DATA_LOADING.discard(path)
 
     threading.Thread(target=load, name="livertraj-graph-load", daemon=True).start()
 
 
-def graph_data_status(path: str, max_edges: int | None = None) -> str:
-    cache_key = f"{path}:{max_edges or 0}"
+def graph_data_status(path: str) -> str:
     with GRAPH_DATA_CACHE_LOCK:
-        if cache_key in GRAPH_DATA_ERRORS:
+        if path in GRAPH_DATA_ERRORS:
             return "error"
-        if cache_key in GRAPH_DATA_CACHE:
+        if path in GRAPH_DATA_CACHE:
             return "ready"
-        if cache_key in GRAPH_DATA_LOADING:
+        if path in GRAPH_DATA_LOADING:
             return "loading"
     return "missing"
 
@@ -419,55 +379,12 @@ def parse_gene_list(raw_gene_list: str | None) -> list[str]:
     return genes
 
 
-def filter_graph_by_genes(graph_payload: dict[str, Any], gene_list: list[str]) -> dict[str, Any]:
-    if not gene_list:
-        return graph_payload
-
-    normalized_genes = {str(gene).strip().lower() for gene in gene_list if str(gene).strip()}
-    if not normalized_genes:
-        return graph_payload
-
-    graph = nx.Graph()
-    for node in graph_payload.get("nodes", []):
-        node_name = str(node).strip()
-        if node_name:
-            graph.add_node(node_name)
-
-    for edge in graph_payload.get("edges", []):
-        source = str(edge.get("source", "")).strip()
-        target = str(edge.get("target", "")).strip()
-        if source and target and source != target:
-            graph.add_edge(source, target)
-
-    seed_nodes = [node for node in graph.nodes() if node.lower() in normalized_genes]
-    if not seed_nodes:
-        return {"nodes": [], "edges": []}
-
-    subgraph_nodes = set(seed_nodes)
-    for node in seed_nodes:
-        subgraph_nodes.update(graph.neighbors(node))
-
-    seed_node_set = set(seed_nodes)
-    connected_edges = []
-    for edge in graph_payload.get("edges", []):
-        source = str(edge.get("source", "")).strip()
-        target = str(edge.get("target", "")).strip()
-        if (
-            source in subgraph_nodes
-            and target in subgraph_nodes
-            and (source in seed_node_set or target in seed_node_set)
-        ):
-            connected_edges.append(edge)
-
-    return {"nodes": sorted(subgraph_nodes), "edges": connected_edges}
-
-
 def get_graph_payload(
     disease: str | None = None,
     cell_type: str | None = None,
     limit: int = 200,
     gene_list: str | list[str] | None = None,
-    max_edges: int | None = None,
+    max_edges: int = GRAPH_DISPLAY_EDGES,
 ) -> dict[str, Any]:
     genes = parse_gene_list(gene_list if isinstance(gene_list, str) else ",".join(gene_list or []))
     selected_diseases = _parse_multi_select_values(disease)
@@ -484,9 +401,7 @@ def get_graph_payload(
     selected = filtered[:limit]
     graphs = []
     for item in selected:
-        payload = load_graph_data(item["path"], max_edges=max_edges)
-        if genes:
-            payload = filter_graph_by_genes(payload, genes)
+        payload = load_graph_data(item["path"]).top(max_edges, genes)
         graphs.append({"file": item["file"], "disease": item["disease"], "cell_type": item["cell_type"], **payload})
     return {"catalog": selected, "graphs": graphs}
 
@@ -497,8 +412,6 @@ def build_graph_network(graph_payload: dict[str, Any], layout: str = "random") -
 
     nodes = graph_payload.get("nodes", []) or []
     edges = graph_payload.get("edges", []) or []
-    if GRAPH_LAYOUT_EDGE_LIMIT is not None and len(edges) > GRAPH_LAYOUT_EDGE_LIMIT:
-        edges = sorted(edges, key=lambda edge: float(edge.get("score", 0.0) or 0.0), reverse=True)[:GRAPH_LAYOUT_EDGE_LIMIT]
     if not nodes and not edges:
         return {"nodes": [], "edges": [], "positions": {}}
 
@@ -510,8 +423,7 @@ def build_graph_network(graph_payload: dict[str, Any], layout: str = "random") -
             continue
         graph.add_edge(source, target, weight=float(edge.get("score", 0.0) or 0.0))
     if graph.number_of_nodes() == 0:
-        limit = GRAPH_LAYOUT_EDGE_LIMIT if GRAPH_LAYOUT_EDGE_LIMIT is not None else len(nodes)
-        for node_name in nodes[:limit]:
+        for node_name in nodes[:GRAPH_DISPLAY_EDGES]:
             graph.add_node(str(node_name))
 
     if graph.number_of_nodes() == 0:
@@ -572,17 +484,16 @@ def get_graph_network_payload(
     selected = catalog[:1]
     if selected:
         item = selected[0]
-        status = graph_data_status(item["path"], max_edges=GRAPH_LAYOUT_EDGE_LIMIT)
+        status = graph_data_status(item["path"])
         graph_info = {"file": item["file"], "disease": item["disease"], "cell_type": item["cell_type"]}
         if status == "missing":
-            start_graph_data_load(item["path"], max_edges=GRAPH_LAYOUT_EDGE_LIMIT)
+            start_graph_data_load(item["path"])
             return {"loading": True, "graph": graph_info}
         if status == "loading":
             return {"loading": True, "graph": graph_info}
         if status == "error":
-            cache_key = f"{item['path']}:{GRAPH_LAYOUT_EDGE_LIMIT}"
-            with GRAPH_DATA_CACHE_LOCK:
-                error = GRAPH_DATA_ERRORS.get(cache_key, "Graph data could not be loaded.")
+            with GRAPH_DATA_CACHE_LOCK:  # pop so the next request retries
+                error = GRAPH_DATA_ERRORS.pop(item["path"], "Graph data could not be loaded.")
             return {"error": error, "graph": graph_info}
 
     payload = get_graph_payload(
@@ -590,7 +501,6 @@ def get_graph_network_payload(
         cell_type=cell_type,
         limit=1,
         gene_list=gene_list,
-        max_edges=GRAPH_LAYOUT_EDGE_LIMIT,
     )
     if not payload.get("graphs"):
         return {"catalog": payload.get("catalog", []), "graph": None, "nodes": [], "edges": []}
@@ -603,6 +513,7 @@ def get_graph_network_payload(
     return {
         "catalog": payload.get("catalog", []),
         "graph": {"file": primary_graph.get("file"), "disease": primary_graph.get("disease"), "cell_type": primary_graph.get("cell_type")},
+        "total_edges": primary_graph.get("total_edges", 0),
         "nodes": network["nodes"],
         "edges": network["edges"],
         "positions": network["positions"],
@@ -1562,7 +1473,7 @@ def get_assistant_visualization(arguments: dict[str, Any]) -> dict[str, Any]:
     if chart_type == "ppi_network":
         if len(diseases) != 1 or len(cell_types) != 1:
             raise ValueError("ppi_network needs exactly one disease and one cell type.")
-        graph_payload = get_graph_payload(disease=diseases[0], cell_type=cell_types[0], limit=1, gene_list=gene, max_edges=GRAPH_LAYOUT_EDGE_LIMIT)
+        graph_payload = get_graph_payload(disease=diseases[0], cell_type=cell_types[0], limit=1, gene_list=gene)
         graphs = graph_payload.get("graphs") or []
         if not graphs or not graphs[0].get("nodes"):
             raise LookupError(f"{gene} is not in the {diseases[0]} / {cell_types[0]} interaction network.")
